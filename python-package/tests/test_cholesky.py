@@ -1,4 +1,4 @@
-from alocv import _cholesky
+from alocv import _cholesky, _cholesky_c
 
 
 import numpy as np
@@ -91,6 +91,25 @@ def test_cholupdate_blas_upper():
     assert np.linalg.norm(np.triu(L_update) - np.triu(L_update_truth), 'fro') < 0.05
 
 
+def test_cholupdate_cython():
+    random = np.random.RandomState(42)
+    p = 500
+    X = random.randn(2 * p, p)
+    S = np.dot(X.T, X)
+    x_update = random.randn(p)
+
+    L = scipy.linalg.cholesky(S, lower=True)
+
+    S_update = S + np.outer(x_update, x_update)
+
+    L_update_truth = scipy.linalg.cholesky(S_update, lower=True).T
+    L_update = _cholesky_c.cholupdate(L, x_update).T
+
+    assert np.linalg.norm(np.dot(L_update_truth.T, L_update_truth) - S_update) < 0.01
+    assert np.linalg.norm(np.dot(L_update.T, L_update) - S_update) < 0.01
+    assert np.linalg.norm(np.triu(L_update) - np.triu(L_update_truth), 'fro') < 0.05
+
+
 def test_cholappend_upper():
     random = np.random.RandomState(42)
     p = 200
@@ -139,3 +158,22 @@ def test_choldelete_upper():
     L_small = _cholesky.choldelete(L, p // 2)
 
     assert np.linalg.norm(np.triu(L_small) - np.triu(L_small_truth)) < 0.05
+
+
+def test_choldelete_cython():
+    random = np.random.RandomState(42)
+    p = 20
+    X = random.randn(2 * p, p)
+    S = np.dot(X.T, X)
+
+    E = np.ones(p, dtype=np.bool)
+    E[p // 2] = False
+
+    S_small = S[:, E][E, :]
+
+    L = scipy.linalg.cholesky(S, lower=True)
+    L_small_truth = scipy.linalg.cholesky(S_small, lower=True)
+    L_small = _cholesky_c.choldelete(L, p // 2)
+
+    assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_truth)) < 0.05
+
