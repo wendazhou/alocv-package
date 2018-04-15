@@ -4,6 +4,7 @@
 
 import numpy as np
 import math
+from scipy.linalg import solve_triangular
 import scipy.linalg.blas as blas
 
 
@@ -64,6 +65,42 @@ def cholupdate(L, x, upper=False, overwrite_x=False, out=None):
 
     if not upper:
         out = out.T
+
+    return out
+
+
+def cholappend(L, b, c, upper=False, out=None):
+    n = L.shape[0]
+
+    if out is None:
+        out = np.zeros((n + 1, n + 1), dtype=L.dtype)
+
+    np.copyto(out[:-1, :-1], L)
+
+    if not upper:
+        out = out.T
+        L = L.T
+
+    s_border = solve_triangular(L, b, trans=True, check_finite=False)
+    out[:-1, -1] = s_border
+    out[-1, -1] = math.sqrt(c - np.inner(s_border, s_border))
+
+    if not upper:
+        out = out.T
+
+    return out
+
+
+def choldelete(L, i, out=None):
+    n = L.shape[0]
+
+    if out is None:
+        out = np.zeros((n - 1, n - 1), dtype=L.dtype)
+
+    np.copyto(out[:i, :i], L[:i, :i])
+    np.copyto(out[:i, i:], L[:i, i + 1:])
+    np.copyto(out[i:, i:], L[i + 1:, i + 1:])
+    cholupdate(out[i:, i:], L[i, i + 1:], upper=True, out=out[i:, i:])
 
     return out
 
