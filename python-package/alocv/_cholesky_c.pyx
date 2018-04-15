@@ -11,6 +11,7 @@ cdef extern from "alocv/cholesky_utils.h":
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 cdef void _cholupdate_d(double[::view.contiguous, :] L, double[:] x) nogil:
     cdef int ldl = L.strides[1] // sizeof(double)
     cdef int incx = x.strides[0] // sizeof(double)
@@ -37,6 +38,7 @@ cpdef cholupdate(L, x):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 cdef void _choldelete_d(double[::view.contiguous, :] L, double[::view.contiguous, :] Lo, int i) nogil:
     cdef int n = L.shape[0]
     cdef int ldl = L.strides[1] // sizeof(double)
@@ -63,6 +65,7 @@ cpdef choldelete(L, i):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 cdef void _cholappend_d(double[::view.contiguous, :] L, double[::view.contiguous, :] Lo, double[:] b, double c) nogil:
     cdef int n = L.shape[0]
     cdef int ldl = L.strides[1] // sizeof(double)
