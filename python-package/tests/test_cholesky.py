@@ -1,6 +1,5 @@
 from alocv import _cholesky, _cholesky_c
 
-
 import numpy as np
 import scipy.linalg
 
@@ -93,7 +92,7 @@ def test_cholupdate_blas_upper():
 
 def test_cholupdate_cython():
     random = np.random.RandomState(42)
-    p = 500
+    p = 20
     X = random.randn(2 * p, p)
     S = np.dot(X.T, X)
     x_update = random.randn(p)

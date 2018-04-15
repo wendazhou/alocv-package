@@ -18,7 +18,7 @@ void cholesky_delete_d(int n, int i, double* L, int ldl, double* Lo, int lodl) {
     int s22_length = n - i - 1;
 
     dlacpy("L", &i, &i, L, &ldl, Lo, &lodl);
-    dlacpy("A", &s22_length, &i, L + (i + 1) * ldl, &ldl, Lo + i * lodl, &lodl);
-    dlacpy("L", &s22_length, &s22_length, L + (i + 1) * ldl + (i + 1), &ldl, Lo + i * ldl + i, &lodl);
-    cholesky_update_d(s22_length, Lo, lodl, L + i * ldl + (i + 1), 1);
+    dlacpy("A", &s22_length, &i, L + i + 1, &ldl, Lo + i, &lodl);
+    dlacpy("L", &s22_length, &s22_length, L + (i + 1) * ldl + (i + 1), &ldl, Lo + i * lodl + i, &lodl);
+    cholesky_update_d(s22_length, Lo + i * lodl + i, lodl, L + i * ldl + (i + 1), 1);
 }
