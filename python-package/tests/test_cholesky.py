@@ -138,6 +138,22 @@ def test_cholappend_lower():
     L_large_truth = scipy.linalg.cholesky(S, lower=True)
     L_large = _cholesky.cholappend(L, S[-1, :-1], S[-1, -1], upper=False)
 
+    assert np.linalg.norm(L_large - L_large_truth) < 0.05
+
+
+def test_cholappend_cython():
+    random = np.random.RandomState(42)
+    p = 4
+    X = random.randn(2 * p, p)
+    S = np.dot(X.T, X)
+
+    S_small = S[:-1, :-1]
+
+    L = scipy.linalg.cholesky(S_small, lower=True)
+
+    L_large_truth = scipy.linalg.cholesky(S, lower=True)
+    L_large = _cholesky_c.cholappend(L, S[-1, :-1], S[-1, -1])
+
     assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 0.05
 
 
