@@ -3,10 +3,13 @@
 #include "blas_configuration.h"
 
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <iterator>
 #include <cassert>
 #include <cmath>
+
+#include <iostream>
 
 
 void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldol,
@@ -72,22 +75,14 @@ void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, b
 }
 
 
-void lasso_compute_leverage_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl,
-                                       blas_size k, blas_size* index, double* leverage) {
-    double* W = static_cast<double*>(blas_malloc(16, n * k * sizeof(double)));
-
-    for(blas_size i = 0; i < k; ++i) {
-        memcpy(W + n * i, A + index[i] * lda, n * sizeof(double));
-    }
-
+void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw,
+                                       double* L, blas_size ldl, double* leverage) {
     double one_d = 1.0;
     dtrsm("R", "L", "T", "N", &n, &k, &one_d, L, &ldl, W, &n);
 
     for(blas_size i = 0; i < n; ++i) {
         leverage[i] = ddot(&k, W + i, &n, W + i, &n);
     }
-
-    blas_free(W);
 }
 
 /*! For a given coefficient set beta, finds the active set by a magnitude-based rule.
@@ -149,27 +144,43 @@ double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y
     return acc / n;
 }
 
-void compute_cholesky(blas_size n, blas_size k, blas_size* index, double* A, blas_size lda, double* L, blas_size ldl) {
+void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double* L, blas_size ldl) {
     blas_size one = 1;
-
-    for(blas_size j = 0; j < k; ++j) {
-        for(blas_size i = j; i < k; ++i) {
-            L[i + ldl * j] = ddot(&n, A + lda * index[i], &one, A + lda * index[j], &one);
-        }
-    }
-
+    double one_d = 1.0;
+    double zero_d = 0.0;
     blas_size info;
 
+    dgemm("T", "N", &k, &k, &n, &one_d, W, &ldw, W, &ldw, &zero_d, L, &ldl);
     dpotrf("L", &k, L, &ldl, &info);
 }
+
+
+/*! Update the copy of the data in the active set we maintain.
+ *
+ *  In order to efficiently compute the cholesky decomposition and the residuals,
+ *  we maintain a copy of the active set.
+ */
+void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, std::vector<blas_size> const& current_index) {
+    // The index is updated by removing some existing columns, and appending new columns
+    // at the end of the representation.
+
+    for(int i = 0; i < current_index.size(); ++i) {
+        memcpy(W + i * ldw, A + current_index[i] * lda, n * sizeof(double));
+    }
+}
+
 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
                          double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo) {
     // Allocate necessary structures
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
+
     double* L = static_cast<double*>(blas_malloc(16, max_active * max_active * sizeof(double)));
     blas_size L_active = 0;
     blas_size ldl = max_active;
+
+    double* W = static_cast<double*>(blas_malloc(16, n * max_active * sizeof(double)));
+    blas_size ldw = n;
 
     std::vector<blas_size> active_index;
     double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
@@ -193,12 +204,15 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             lasso_update_cholesky_d(n, A, lda, L, ldl, L, ldl,
                                     active_index.size(), active_index.data(),
                                     current_index.size(), current_index.data());
+            create_w(n, W, ldw, A, lda, current_index);
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.
-            compute_cholesky(n, num_active, current_index.data(), A, lda, L, ldl);
+            create_w(n, W, ldw, A, lda, current_index);
+            compute_cholesky(n, num_active, W, ldw, L, ldl);
         }
 
+        // update our current copy of the active set.
         L_active = num_active;
 
         // update the active index
@@ -213,7 +227,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         }
 
         // compute the leverage value.
-        lasso_compute_leverage_cholesky_d(n, A, lda, L, ldl, num_active, active_index.data(), leverage);
+        lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage);
         // compute the current ALO vlue.
         alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage, 1);
     }

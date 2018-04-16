@@ -108,8 +108,7 @@ def cholappend(L, b, c, out=None):
 cdef extern from "alocv/alo_lasso.h":
     cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo,
                                       int len_index, int* index, int len_index_new, int* index_new) nogil
-    cdef void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl,
-                                                int k, int* index, double* leverage) nogil
+    cdef void lasso_compute_leverage_cholesky_d(int n, int k, double* W, int ldw, double* L, int ldl, double* leverage) nogil
     cdef void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb,
                                   double* y, int incy, double tolerance, double* alo) nogil
 
@@ -145,22 +144,25 @@ def lasso_update_cholesky(X, L, index, index_new, out=None):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void _lasso_compute_leverage_cholesky(double[::view.contiguous, :] A,
+cdef void _lasso_compute_leverage_cholesky(double[::view.contiguous, :] W,
                                            double[::view.contiguous, :] L,
-                                           int[::1] index, double[::1] leverage) nogil:
-    cdef int n = A.shape[0]
-    cdef int lda = A.strides[1] // sizeof(double)
+                                           double[::1] leverage) nogil:
+    cdef int n = W.shape[0]
+    cdef int k = W.shape[1]
+    cdef int ldw = W.strides[1] // sizeof(double)
     cdef int ldl = L.strides[1] // sizeof(double)
 
-    lasso_compute_leverage_cholesky_d(n, &A[0, 0], lda, &L[0, 0], ldl,
-                                      len(index), &index[0], &leverage[0])
+    lasso_compute_leverage_cholesky_d(n, k, &W[0, 0], ldw, &L[0, 0], ldl, &leverage[0])
 
 @cython.embedsignature(True)
-def lasso_compute_leverage_cholesky(A, L, index, out=None):
+def lasso_compute_leverage_cholesky(A, L, index=None, out=None):
     if out is None:
         out = np.empty(A.shape[0])
 
-    _lasso_compute_leverage_cholesky(A, L, index, out)
+    if index is not None:
+        A = A[:, index]
+
+    _lasso_compute_leverage_cholesky(A, L, out)
     return out
 
 @cython.boundscheck(False)

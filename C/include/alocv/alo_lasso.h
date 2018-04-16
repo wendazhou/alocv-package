@@ -54,16 +54,14 @@ void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, b
 /*! Utility function to compute the leverage value from the cholesky decomposition maintained by the algorithm.
  *
  * @param[in] n The number of observations (or rows of A).
- * @param[in] A The regression matrix.
- * @param[in] lda The leading dimension of A.
+ * @param[in] k The size of the active set.
+ * @param[in] W The regression matrix on the active set.
+ * @param[in] ldw The leading dimension of W.
  * @param[in] L The Cholesky decomposition of the covariance of the active set.
  * @param[in] ldl The leading dimension of L.
- * @param[in] k The size of the active set.
- * @param[in] index The index of the active set.
  * @param[out] leverage The computed leverage values.
  */
-void lasso_compute_leverage_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl,
-                                       blas_size k, blas_size* index, double* leverage);
+void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw, double* L, blas_size ldl, double* leverage);
 
 #ifdef __cplusplus
 }
