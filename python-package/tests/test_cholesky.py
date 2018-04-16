@@ -104,9 +104,9 @@ def test_cholupdate_cython():
     L_update_truth = scipy.linalg.cholesky(S_update, lower=True).T
     L_update = _cholesky_c.cholupdate(L, x_update).T
 
-    assert np.linalg.norm(np.dot(L_update_truth.T, L_update_truth) - S_update) < 0.01
-    assert np.linalg.norm(np.dot(L_update.T, L_update) - S_update) < 0.01
-    assert np.linalg.norm(np.triu(L_update) - np.triu(L_update_truth), 'fro') < 0.05
+    assert np.linalg.norm(np.dot(L_update_truth.T, L_update_truth) - S_update) < 1e-5
+    assert np.linalg.norm(np.dot(L_update.T, L_update) - S_update) < 1e-5
+    assert np.linalg.norm(np.triu(L_update) - np.triu(L_update_truth), 'fro') < 1e-5
 
 
 def test_cholappend_upper():
@@ -154,7 +154,7 @@ def test_cholappend_cython():
     L_large_truth = scipy.linalg.cholesky(S, lower=True)
     L_large = _cholesky_c.cholappend(L, S[-1, :-1], S[-1, -1])
 
-    assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 0.05
+    assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 1e-3
 
 
 def test_choldelete_upper():
@@ -190,5 +190,5 @@ def test_choldelete_cython():
     L_small_truth = scipy.linalg.cholesky(S_small, lower=True)
     L_small = _cholesky_c.choldelete(L, p // 2)
 
-    assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_truth)) < 0.05
+    assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_truth)) < 0.001
 

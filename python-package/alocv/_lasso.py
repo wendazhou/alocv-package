@@ -5,7 +5,7 @@
 import numpy as np
 from scipy.linalg import cholesky, solve_triangular, solve
 
-from ._cholesky_c import cholappend
+from ._cholesky_c import cholappend, choldelete
 
 
 def compute_alo_lasso_reference(X, y, beta_hats):
@@ -22,27 +22,33 @@ def compute_alo_lasso_reference(X, y, beta_hats):
     -------
     alo_values: The ALO mean-squared error for each tuning.
     """
-    residuals = y - np.dot(X, beta_hats)
+    residuals = y[:, np.newaxis] - np.dot(X, beta_hats)
 
     alo_values = np.empty(beta_hats.shape[1])
 
     for i in range(beta_hats.shape[1]):
         E = np.abs(beta_hats[:, i]) > 1e-5
         h = compute_h_lasso(X, E)
-        alo_values[i] = np.mean(np.square(residuals / (1 - h)))
+        alo_values[i] = np.square(np.divide(residuals[:, i], (1 - h))).mean()
 
     return alo_values
 
 
-def compute_cholesky(X, index):
+def _compute_cholesky(X, index):
     S = np.dot(X[:, index].T, X[:, index])
     return cholesky(S, lower=True, overwrite_a=True, check_finite=False)
 
 
-def update_cholesky(X, L, index, index_new):
+def _update_cholesky(X, L, index, index_new):
     index_added = set(index_new) - set(index)
+    index_removed = set(index) - set(index_new)
 
     index = list(index)
+
+    for i in index_removed:
+        loc = index.index(i)
+        del index[loc]
+        L = choldelete(L, i)
 
     for i in index_added:
         index.append(i)
@@ -51,13 +57,13 @@ def update_cholesky(X, L, index, index_new):
     return L, index
 
 
-def compute_leverage_cholesky(X, L, index):
+def _compute_leverage_cholesky(X, L, index):
     W = X[:, index]
-    return np.sum(solve_triangular(L, W.T, check_finite=False) ** 2, axis=0)
+    return np.sum(solve_triangular(L, W.T, lower=True, check_finite=False) ** 2, axis=0)
 
 
 def compute_alo_lasso(X, y, beta_hats):
-    residuals = y - np.dot(X, beta_hats)
+    residuals = y[:, np.newaxis] - np.dot(X, beta_hats)
     alo_values = np.empty(beta_hats.shape[1])
 
     cholesky_current = None
@@ -70,17 +76,26 @@ def compute_alo_lasso(X, y, beta_hats):
         if num_active == 0:
             cholesky_current = None
             active_index = []
+            alo_values[i] = np.mean(np.square(residuals[:, i]))
             continue
 
         if cholesky_current is None:
-            active_index = np.flatnonzero(E)
-            W = X[:, E]
-            S = np.dot(W.T, W)
-            cholesky_current = cholesky(S, lower=True, overwrite_a=True, check_finite=False)
+            current_index = np.flatnonzero(E)
+            cholesky_current = _compute_cholesky(X, current_index)
         else:
             current_index = np.flatnonzero(E)
-            new_index = np.array(set(current_index) - set(active_index))
-    pass
+            cholesky_current, current_index = _update_cholesky(X, cholesky_current, active_index, current_index)
+
+        active_index = current_index
+
+        if num_active >= X.shape[0]:
+            leverage = np.ones(X.shape[0], dtype=X.dtype)
+        else:
+            leverage = _compute_leverage_cholesky(X, cholesky_current, active_index)
+
+        alo_values[i] = np.mean(np.square(residuals[:, i] / (1 - leverage)))
+
+    return alo_values
 
 
 def compute_h_lasso(X, E):
@@ -101,9 +116,9 @@ def compute_h_lasso(X, E):
     num_active = np.sum(E)
 
     if num_active == 0:
-        return np.zeros(X.shape[0])
-    elif num_active >= X.shape[1]:
-        return np.ones(X.shape[0])
+        return np.zeros(X.shape[0], dtype=X.dtype)
+    elif num_active >= X.shape[0]:
+        return np.ones(X.shape[0], dtype=X.dtype)
 
     W = X[:, E]
     S = np.dot(W.T, W)

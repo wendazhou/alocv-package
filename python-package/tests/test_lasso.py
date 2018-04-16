@@ -4,11 +4,13 @@ import numpy as np
 import sklearn.linear_model as linear_model
 
 
-def make_test_case(n, p, k):
-    X = np.random.randn(p, n).T
-    beta = np.random.randn(p) * np.concatenate((np.ones(k), np.zeros(p - k)))
-    np.random.shuffle(beta)
-    y = np.dot(X, beta) + np.random.randn(n) * 0.1
+def make_test_case(n, p, k, seed=42):
+    random = np.random.RandomState(seed)
+
+    X = random.randn(p, n).T
+    beta = random.randn(p) * np.concatenate((np.ones(k), np.zeros(p - k)))
+    random.shuffle(beta)
+    y = np.dot(X, beta) + random.randn(n) * 0.1
 
     return X, y
 
@@ -25,27 +27,33 @@ def test_compute_h():
 
 
 def test_compute_alo_path():
-    X, y = make_test_case(100, 20, 10)
+    X, y = make_test_case(50, 20, 10)
 
     alphas, beta_hats, _ = linear_model.lasso_path(X, y)
     alo = lasso.compute_alo_lasso_reference(X, y, beta_hats)
 
+    beta_hat = beta_hats[:, 5]
+    h_5 = lasso.compute_h_lasso(X, np.abs(beta_hat) > 1e-5)
+    r_5 = y - np.dot(X, beta_hat)
+    alo_5 = np.square(r_5 / (1 - h_5)).mean()
+
     assert len(alo) == len(alphas)
+    assert np.allclose(alo_5, alo[5])
 
 
 def test_update_cholesky_single():
     X, y = make_test_case(50, 5, 2)
 
-    E = np.array([True, False, False, False, False])
-    E_new = np.array([True, False, True, False, False])
+    E = np.array([True, False, True, False, False])
+    E_new = np.array([True, False, True, True, False])
 
-    L = lasso.compute_cholesky(X, E)
-    L_new, index_new = lasso.update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
-    L_new_truth = lasso.compute_cholesky(X, E_new)
+    L = lasso._compute_cholesky(X, E)
+    L_new, index_new = lasso._update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
+    L_new_truth = lasso._compute_cholesky(X, E_new)
 
     assert np.linalg.norm(
-        lasso.compute_leverage_cholesky(X, L_new, index_new)
-        - lasso.compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.01
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.001
 
 
 def test_update_cholesky_no_order():
@@ -54,13 +62,17 @@ def test_update_cholesky_no_order():
     E = np.array([True, False, True, False, False])
     E_new = np.array([True, True, True, False, False])
 
-    L = lasso.compute_cholesky(X, E)
-    L_new, index_new = lasso.update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
-    L_new_truth = lasso.compute_cholesky(X, E_new)
+    perm = np.array([0, 2, 1, 3, 4])
 
+    L = lasso._compute_cholesky(X, E)
+    L_new, index_new = lasso._update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
+    L_new_truth = lasso._compute_cholesky(X, E_new)
+    L_new_truth_perm = lasso._compute_cholesky(X[:, perm], E_new[perm])
+
+    assert np.linalg.norm(L_new - L_new_truth_perm) < 1e-5
     assert np.linalg.norm(
-        lasso.compute_leverage_cholesky(X, L_new, index_new)
-        - lasso.compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.01
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-3
 
 
 def test_update_cholesky_multiple():
@@ -69,10 +81,52 @@ def test_update_cholesky_multiple():
     E = np.array([True, False, True, False, False])
     E_new = np.array([True, True, True, True, False])
 
-    L = lasso.compute_cholesky(X, E)
-    L_new, index_new = lasso.update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
-    L_new_truth = lasso.compute_cholesky(X, E_new)
+    L = lasso._compute_cholesky(X, E)
+    L_new, index_new = lasso._update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
+    L_new_truth = lasso._compute_cholesky(X, E_new)
 
     assert np.linalg.norm(
-        lasso.compute_leverage_cholesky(X, L_new, index_new)
-        - lasso.compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.01
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.01
+
+
+def test_update_cholesky_remove():
+    X, y = make_test_case(50, 5, 2)
+
+    E = np.array([True, True, True, False, False])
+    E_new = np.array([True, False, True, False, False])
+
+    L = lasso._compute_cholesky(X, E)
+    L_new, index_new = lasso._update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
+    L_new_truth = lasso._compute_cholesky(X, E_new)
+
+    assert np.linalg.norm(
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
+
+
+def test_update_cholesky_mixed():
+    X, y = make_test_case(50, 5, 2)
+
+    E = np.array([True, False, True, True, False])
+    E_new = np.array([True, True, True, False, False])
+
+    L = lasso._compute_cholesky(X, E)
+    L_new, index_new = lasso._update_cholesky(X, L, np.flatnonzero(E), np.flatnonzero(E_new))
+    L_new_truth = lasso._compute_cholesky(X, E_new)
+
+    assert np.linalg.norm(
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
+
+
+def test_compute_alo_path_fast():
+    X, y = make_test_case(50, 20, 10)
+
+    alphas, beta_hats, _ = linear_model.lasso_path(X, y)
+
+    alo = lasso.compute_alo_lasso_reference(X, y, beta_hats)
+    alo_fast = lasso.compute_alo_lasso(X, y, beta_hats)
+
+    assert np.all(np.isfinite(alo) == np.isfinite(alo_fast))
+    assert np.square(alo[np.isfinite(alo)] - alo_fast[np.isfinite(alo_fast)]).mean() < 1e-3
