@@ -13,7 +13,8 @@ extensions = [
                '../C/src'] +
               np.__config__.blas_opt_info['include_dirs'],
               library_dirs=np.__config__.blas_opt_info['library_dirs'],
-              libraries=np.__config__.blas_opt_info['libraries'])
+              libraries=np.__config__.blas_opt_info['libraries'],
+              define_macros=[('USE_MKL', 1)])
 ]
 
 setup(

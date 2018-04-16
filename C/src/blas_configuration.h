@@ -1,8 +1,6 @@
 #ifndef WENDA_BLAS_CONFIGURATION_H_INCLUDED
 #define WENDA_BLAS_CONFIGURATION_H_INCLUDED
 
-#define USE_MKL
-
 #include "stddef.h"
 
 #ifdef USE_MKL
