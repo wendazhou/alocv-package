@@ -3,13 +3,10 @@
 #include "blas_configuration.h"
 
 #include <vector>
-#include <map>
 #include <algorithm>
 #include <iterator>
 #include <cassert>
 #include <cmath>
-
-#include <iostream>
 
 
 void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldol,
@@ -150,7 +147,11 @@ void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double
     double zero_d = 0.0;
     blas_size info;
 
+#ifdef USE_MKL
+    dgemmt("L", "T", "N", &k, &n, &one_d, W, &ldw, W, &ldw, &zero_d, L, &ldl);
+#else
     dgemm("T", "N", &k, &k, &n, &one_d, W, &ldw, W, &ldw, &zero_d, L, &ldl);
+#endif
     dpotrf("L", &k, L, &ldl, &info);
 }
 
