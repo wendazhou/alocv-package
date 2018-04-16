@@ -124,7 +124,7 @@ double compute_alo(int n, int p, double* A, int lda, double* y, double* beta, do
 
     blas_free(temp);
 
-    return acc;
+    return acc / n;
 }
 
 void compute_cholesky(int n, int k, int* index, double* A, int lda, double* L, int ldl) {

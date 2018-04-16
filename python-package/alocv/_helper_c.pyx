@@ -110,6 +110,8 @@ cdef extern from "alocv/alo_lasso.h":
                                       int len_index, int* index, int len_index_new, int* index_new) nogil
     cdef void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl,
                                                 int k, int* index, double* leverage) nogil
+    cdef void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb,
+                                  double* y, int incy, double tolerance, double* alo) nogil
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -159,4 +161,36 @@ def lasso_compute_leverage_cholesky(A, L, index, out=None):
         out = np.empty(A.shape[0])
 
     _lasso_compute_leverage_cholesky(A, L, index, out)
+    return out
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
+                               double[:] y,
+                               double[::view.contiguous, :] B,
+                               double tolerance, double[::1] alo) nogil:
+    cdef int n = A.shape[0]
+    cdef int p = A.shape[1]
+    cdef int num_tuning = B.shape[1]
+    cdef int lda = A.strides[1] // sizeof(double)
+    cdef int ldb = B.strides[1] // sizeof(double)
+    cdef int incy = y.strides[0] // sizeof(double)
+
+    lasso_compute_alo_d(n, p, num_tuning, &A[0, 0], lda, &B[0, 0], ldb,
+                        &y[0], incy, tolerance, &alo[0])
+
+
+@cython.embedsignature(True)
+def lasso_compute_alo(X, y, beta_hats, tolerance=1e-5, out=None):
+    if out is None:
+        out = np.empty(beta_hats.shape[1])
+
+    if not X.flags.f_contiguous:
+        X = np.copy(X, order='F')
+
+    if not beta_hats.flags.f_contiguous:
+        beta_hats = np.copy(beta_hats, order='F')
+
+    _lasso_compute_alo_d(X, y, beta_hats, tolerance, out)
     return out

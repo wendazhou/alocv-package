@@ -141,13 +141,14 @@ def test_update_cholesky_mixed(method):
         - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
 
 
-def test_compute_alo_path_fast():
+@pytest.mark.parametrize("method", [lasso.compute_alo_lasso, native_impl.lasso_compute_alo])
+def test_compute_alo_path_fast(method):
     X, y = make_test_case(50, 20, 10)
 
     alphas, beta_hats, _ = linear_model.lasso_path(X, y)
 
     alo = lasso.compute_alo_lasso_reference(X, y, beta_hats)
-    alo_fast = lasso.compute_alo_lasso(X, y, beta_hats)
+    alo_fast = method(X, y, beta_hats)
 
     assert np.all(np.isfinite(alo) == np.isfinite(alo_fast))
     assert np.square(alo[np.isfinite(alo)] - alo_fast[np.isfinite(alo_fast)]).mean() < 1e-3
