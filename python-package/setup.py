@@ -5,7 +5,8 @@ from Cython.Build import cythonize
 extensions = [
     Extension("alocv._cholesky_c",
               ['alocv/_cholesky_c.pyx',
-               '../C/src/cholesky_utils.c'],
+               '../C/src/cholesky_utils.c',
+               '../C/src/alo_lasso.cpp'],
               include_dirs=
               [np.get_include(),
                '../C/include',

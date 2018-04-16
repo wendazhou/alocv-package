@@ -48,7 +48,7 @@ cdef void _choldelete_d(double[::view.contiguous, :] L, double[::view.contiguous
 
 
 @cython.embedsignature(True)
-cpdef choldelete(L, i):
+cpdef choldelete(L, i, out=None):
     """ Updates the Cholesky decomposition when deleting a single column.
     
     Parameters
@@ -57,7 +57,10 @@ cpdef choldelete(L, i):
     i: The index of the location to delete.
     """
     n = L.shape[0]
-    cdef np.ndarray[double, ndim=2] out = np.zeros((n - 1, n - 1), order='F')
+
+    if out is None:
+        out = np.zeros((n - 1, n - 1), order='F')
+
     _choldelete_d(L, out, i)
 
     return out
@@ -75,7 +78,7 @@ cdef void _cholappend_d(double[::view.contiguous, :] L, double[::view.contiguous
     cholesky_append_d(n, &L[0, 0], ldl, &b[0], incb, c, &Lo[0, 0], lodl)
 
 @cython.embedsignature(True)
-def cholappend(L, b, c):
+def cholappend(L, b, c, out=None):
     """ Update the Cholesky decomposition when appending a single column.
 
     Parameters
@@ -85,7 +88,9 @@ def cholappend(L, b, c):
     c: a scalar corresponding to the value of the appended corner.
     """
     n = L.shape[0]
-    cdef np.ndarray[double, ndim=2] out = np.zeros((n + 1, n + 1), order='F')
-    _cholappend_d(L, out, b, c)
 
+    if out is None:
+        out = np.zeros((n + 1, n + 1), order='F')
+
+    _cholappend_d(L, out, b, c)
     return out

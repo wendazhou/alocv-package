@@ -51,8 +51,8 @@ def _update_cholesky(X, L, index, index_new):
         L = choldelete(L, i)
 
     for i in index_added:
-        index.append(i)
         L = cholappend(L, np.dot(X[:, index].T, X[:, i]), np.dot(X[:, i].T, X[:, i]))
+        index.append(i)
 
     return L, index
 
