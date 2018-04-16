@@ -106,8 +106,10 @@ def cholappend(L, b, c, out=None):
 
 
 cdef extern from "alocv/alo_lasso.h":
-    cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int lodl,
+    cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo,
                                       int len_index, int* index, int len_index_new, int* index_new) nogil
+    cdef void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl,
+                                                int k, int* index, double* leverage) nogil
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -137,3 +139,24 @@ def lasso_update_cholesky(X, L, index, index_new, out=None):
     _lasso_update_cholesky(X, L, out, index_view, index_new_view)
 
     return out, index_new_view
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _lasso_compute_leverage_cholesky(double[::view.contiguous, :] A,
+                                           double[::view.contiguous, :] L,
+                                           int[::1] index, double[::1] leverage) nogil:
+    cdef int n = A.shape[0]
+    cdef int lda = A.strides[1] // sizeof(double)
+    cdef int ldl = L.strides[1] // sizeof(double)
+
+    lasso_compute_leverage_cholesky_d(n, &A[0, 0], lda, &L[0, 0], ldl,
+                                      len(index), &index[0], &leverage[0])
+
+@cython.embedsignature(True)
+def lasso_compute_leverage_cholesky(A, L, index, out=None):
+    if out is None:
+        out = np.empty(A.shape[0])
+
+    _lasso_compute_leverage_cholesky(A, L, index, out)
+    return out

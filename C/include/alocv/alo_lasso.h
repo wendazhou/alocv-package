@@ -5,7 +5,60 @@
 extern "C" {
 #endif
 
-void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int lodl, int len_index, int* index, int len_index_new, int* index_new);
+/*! Compute the mean square alo error along the given regularization path.
+ * 
+ * @param[in] n The number of observations (or rows of A).
+ * @param[in] p The number of parameters (or columns of A).
+ * @param[in] num_tuning The number of tuning considered (columns of B).
+ * @param[in] A The regression matrix.
+ * @param[in] lda The leading dimension of A.
+ * @param[in] B The matrix of fitted parameters.
+ * @param[in] ldb The leading dimension of B.
+ * @param[in] y The observed values.
+ * @param[in] incy The increment of y.
+ * @param[in] tolerance The tolerance to determine the active set.
+ * @param[out] alo The alo values.
+ */ 
+void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb, double* y, int incy, double tolerance, double* alo);
+
+/*! Utility function to update the Cholesky decomposition along the lasso path.
+ *
+ * An essential component in computing the leverage values for the LASSO estimator is to compute the
+ * inverse of the covariance of the active set. We do this by maintaining the Cholesky decomposition
+ * of the covariance of the active set along the solution path, and update this decomposition iteratively
+ * as we go down the solution path.
+ * 
+ * For performance reasons, we only append new active coordinates at the end of the decomposition.
+ * For this reason, we need to maintain the corresponding ordering of the elements in our decomposition.
+ * 
+ * @param[in] n The number of observations (or rows) of A
+ * @param[in] A The regression matrix
+ * @param[in] lda The leading dimension of A
+ * @param[in] L The Cholesky decomposition of the current active set in lower triangular form.
+ * @param[in] ldl The leading dimension of L
+ * @param[out] Lo The updated Cholesky decomposition. May be the same as L.
+ * @param[in] ldlo The leading dimension of Lo.
+ * @param[in] len_index The size of the current active set.
+ * @param[in] index The indices of the columns that are currently active.
+ * @param[in] len_index_new The size of the new active set.
+ * @param[in,out] index_new The indices of the new active set. This will be re-ordered to represent the new
+ *      active set in the order in which they appear in the decomposition.
+ * 
+ */
+void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo, int len_index, int* index, int len_index_new, int* index_new);
+
+/*! Utility function to compute the leverage value from the cholesky decomposition maintained by the algorithm.
+ *
+ * @param[in] n The number of observations (or rows of A).
+ * @param[in] A The regression matrix.
+ * @param[in] lda The leading dimension of A.
+ * @param[in] L The Cholesky decomposition of the covariance of the active set.
+ * @param[in] ldl The leading dimension of L.
+ * @param[in] k The size of the active set.
+ * @param[in] index The index of the active set.
+ * @param[out] leverage The computed leverage values.
+ */
+void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl, int k, int* index, double* leverage);
 
 #ifdef __cplusplus
 }

@@ -17,14 +17,14 @@ def make_test_case(n, p, k, seed=42):
 
 
 def test_compute_h():
-    X, y = make_test_case(100, 20, 10)
+    X, y = make_test_case(50, 20, 10)
 
     E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool)
 
     h_computed = lasso.compute_h_lasso(X, E)
     h_naive = lasso.compute_h_lasso_naive(X, E)
 
-    assert np.linalg.norm(h_computed - h_naive) < 0.05
+    assert np.linalg.norm(h_computed - h_naive) < 1e-5
 
 
 def test_compute_alo_path():
@@ -40,6 +40,21 @@ def test_compute_alo_path():
 
     assert len(alo) == len(alphas)
     assert np.allclose(alo_5, alo[5])
+
+
+@pytest.mark.parametrize('method', [lasso._compute_leverage_cholesky,
+                                    native_impl.lasso_compute_leverage_cholesky])
+def test_compute_leverage_cholesky(method):
+    X, y = make_test_case(100, 20, 10)
+
+    E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool)
+    S = np.dot(X[:, E].T, X[:, E])
+
+    h_computed = lasso.compute_h_lasso(X, E)
+    chol = np.copy(np.linalg.cholesky(S), order='F')
+    h_cholesky = method(X, chol, np.flatnonzero(E).astype(np.int32))
+
+    assert np.allclose(h_computed, h_cholesky)
 
 
 @pytest.mark.parametrize("method", [lasso._update_cholesky, native_impl.lasso_update_cholesky])

@@ -122,8 +122,8 @@ def compute_h_lasso(X, E):
 
     W = X[:, E]
     S = np.dot(W.T, W)
-    K = cholesky(S, overwrite_a=True, check_finite=False)
-    return np.sum(solve_triangular(K, W.T, check_finite=False) ** 2, axis=0)
+    K = cholesky(S, lower=True, overwrite_a=True, check_finite=False)
+    return np.sum(solve_triangular(K, W.T, lower=True, check_finite=False) ** 2, axis=0)
 
 
 def compute_h_lasso_naive(X, E):
