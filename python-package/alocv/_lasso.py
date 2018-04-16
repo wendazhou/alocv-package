@@ -5,7 +5,7 @@
 import numpy as np
 from scipy.linalg import cholesky, solve_triangular, solve
 
-from ._cholesky_c import cholappend, choldelete
+from ._helper_c import cholappend, choldelete
 
 
 def compute_alo_lasso_reference(X, y, beta_hats):

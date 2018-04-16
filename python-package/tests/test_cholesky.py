@@ -1,4 +1,4 @@
-from alocv import _cholesky, _cholesky_c
+from alocv import _cholesky, _helper_c as native_impl
 
 import numpy as np
 import scipy.linalg
@@ -102,7 +102,7 @@ def test_cholupdate_cython():
     S_update = S + np.outer(x_update, x_update)
 
     L_update_truth = scipy.linalg.cholesky(S_update, lower=True).T
-    L_update = _cholesky_c.cholupdate(L, x_update).T
+    L_update = native_impl.cholupdate(L, x_update).T
 
     assert np.linalg.norm(np.dot(L_update_truth.T, L_update_truth) - S_update) < 1e-5
     assert np.linalg.norm(np.dot(L_update.T, L_update) - S_update) < 1e-5
@@ -152,7 +152,7 @@ def test_cholappend_cython():
     L = scipy.linalg.cholesky(S_small, lower=True)
 
     L_large_truth = scipy.linalg.cholesky(S, lower=True)
-    L_large = _cholesky_c.cholappend(L, S[-1, :-1], S[-1, -1])
+    L_large = native_impl.cholappend(L, S[-1, :-1], S[-1, -1])
 
     assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 1e-3
 
@@ -171,7 +171,7 @@ def test_cholappend_cython_inplace():
     L_large = np.zeros_like(L_large_truth)
     L_large[:-1, :-1] = L
 
-    L_large_inplace = _cholesky_c.cholappend(L_large[:-1, :-1], S[-1, :-1], S[-1, -1], out=L_large)
+    L_large_inplace = native_impl.cholappend(L_large[:-1, :-1], S[-1, :-1], S[-1, -1], out=L_large)
 
     assert L_large_inplace is L_large
     assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 1e-3
@@ -208,7 +208,7 @@ def test_choldelete_cython():
 
     L = scipy.linalg.cholesky(S, lower=True)
     L_small_truth = scipy.linalg.cholesky(S_small, lower=True)
-    L_small = _cholesky_c.choldelete(L, p // 2)
+    L_small = native_impl.choldelete(L, p // 2)
 
     assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_truth)) < 0.001
 
@@ -223,8 +223,8 @@ def test_choldelete_cython_inplace():
     E[p // 2] = False
 
     L = scipy.linalg.cholesky(S, lower=True)
-    L_small = _cholesky_c.choldelete(L, p // 2)
-    L_small_inplace = _cholesky_c.choldelete(L, p // 2, out=L[:-1, :-1])
+    L_small = native_impl.choldelete(L, p // 2)
+    L_small_inplace = native_impl.choldelete(L, p // 2, out=L[:-1, :-1])
 
     assert L_small_inplace.base is L
     assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_inplace)) < 0.001

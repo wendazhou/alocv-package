@@ -3,6 +3,10 @@ cimport numpy as np
 cimport cython
 from cython cimport view
 
+########################################
+# Cholesky utilities
+########################################
+
 cdef extern from "alocv/cholesky_utils.h":
     cdef void cholesky_update_d(int n, double* L, int ldl, double * x, int incx) nogil
     cdef void cholesky_delete_d(int n, int i, double* L, int ldl, double* Lo, int lodl) nogil
@@ -94,3 +98,42 @@ def cholappend(L, b, c, out=None):
 
     _cholappend_d(L, out, b, c)
     return out
+
+
+###########################################
+# Lasso implementation
+###########################################
+
+
+cdef extern from "alocv/alo_lasso.h":
+    cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int lodl,
+                                      int len_index, int* index, int len_index_new, int* index_new) nogil
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _lasso_update_cholesky(double[::view.contiguous, :] A,
+                                 double[::view.contiguous, :] L,
+                                 double[::view.contiguous, :] Lo,
+                                 int[::1] index, int[::1] index_new) nogil:
+    cdef int n = A.shape[0]
+    cdef int lda = A.strides[1] // sizeof(double)
+    cdef int ldl = L.strides[1] // sizeof(double)
+    cdef int ldlo = Lo.strides[1] // sizeof(double)
+
+    lasso_update_cholesky_d(n, &A[0, 0], lda, &L[0, 0], ldl, &Lo[0, 0], ldlo,
+                          len(index), &index[0], len(index_new), &index_new[0])
+
+
+@cython.embedsignature(True)
+def lasso_update_cholesky(X, L, index, index_new, out=None):
+    cdef int[::1] index_view = np.array(index, dtype=np.int32)
+    cdef int[::1] index_new_view = np.array(index_new, dtype=np.int32)
+
+    if out is None:
+        n_out = len(index_new_view)
+        out = np.zeros((n_out, n_out), order='F')
+
+    _lasso_update_cholesky(X, L, out, index_view, index_new_view)
+
+    return out, index_new_view

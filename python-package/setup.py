@@ -3,8 +3,8 @@ from setuptools import setup, find_packages, Extension
 from Cython.Build import cythonize
 
 extensions = [
-    Extension("alocv._cholesky_c",
-              ['alocv/_cholesky_c.pyx',
+    Extension("alocv._helper_c",
+              ['alocv/_helper_c.pyx',
                '../C/src/cholesky_utils.c',
                '../C/src/alo_lasso.cpp'],
               include_dirs=
