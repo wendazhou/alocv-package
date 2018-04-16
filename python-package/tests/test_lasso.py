@@ -141,6 +141,26 @@ def test_update_cholesky_mixed(method):
         - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
 
 
+def test_update_cholesky_inplace():
+    X, y = make_test_case(50, 5, 2)
+
+    E = np.array([True, False, True, True, False])
+    E_new = np.array([True, True, True, False, False])
+
+    L_orig = lasso._compute_cholesky(X, E)
+    L_new_truth = lasso._compute_cholesky(X, E_new)
+
+    L = np.empty_like(L_new_truth, order='F')
+    L[:L_orig.shape[0], :L_orig.shape[1]] = L_orig
+    L_new, index_new = native_impl.lasso_update_cholesky(
+        X, L[:-1, :-1], np.flatnonzero(E), np.flatnonzero(E_new), out=L)
+
+    assert L_new is L
+    assert np.linalg.norm(
+        lasso._compute_leverage_cholesky(X, L_new, index_new)
+        - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
+
+
 @pytest.mark.parametrize("method", [lasso.compute_alo_lasso, native_impl.lasso_compute_alo])
 def test_compute_alo_path_fast(method):
     X, y = make_test_case(50, 20, 10)

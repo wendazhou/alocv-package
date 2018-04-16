@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <iterator>
 #include <cassert>
-#include <iostream>
 #include <cmath>
 
 
@@ -109,6 +108,21 @@ std::vector<blas_size> find_active_set(blas_size p, double* beta, double toleran
     return result;
 }
 
+
+/*! Finds the largest active set in the given set of solutions.
+ */
+blas_size max_active_set_size(blas_size num_tuning, blas_size p, double* B, blas_size ldb, double tolerance) {
+    blas_size max_size = 0;
+
+    for(blas_size i = 0; i < num_tuning; ++ i) {
+        blas_size current_size = std::count_if(B + ldb * i, B + ldb * i + p, [=](double x) { return std::abs(x) > tolerance; });
+        max_size = std::max(max_size, current_size);
+    }
+
+    return max_size;
+}
+
+
 double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y,
                    double* beta, double* leverage, blas_size incl) {
     double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
@@ -151,10 +165,14 @@ void compute_cholesky(blas_size n, blas_size k, blas_size* index, double* A, bla
 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
                          double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo) {
+    // Allocate necessary structures
+    blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
+    double* L = static_cast<double*>(blas_malloc(16, max_active * max_active * sizeof(double)));
+    blas_size L_active = 0;
+    blas_size ldl = max_active;
+
     std::vector<blas_size> active_index;
-    double* current_cholesky = nullptr;
     double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
-    blas_size current_cholesky_size = 0;
 
     for(blas_size i = 0; i < m; ++i) {
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
@@ -165,46 +183,23 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             // no active set, reset current path.
             double zero_leverage = 0.0;
             alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, &zero_leverage, 0);
-            blas_free(current_cholesky);
-            current_cholesky = 0;
+            L_active = 0;
             continue;
         }
 
         // First, we need to make sure our Cholesky decomposition is up to date.
-        if (current_cholesky) {
+        if (L_active > 0) {
             // update our cholesky decomposition
-            double* new_cholesky;
-            blas_size new_cholesky_size;
-
-            if (current_cholesky_size < num_active) {
-                // need to allocate space for new cholesky decomposition.
-                new_cholesky_size = num_active;
-                new_cholesky = static_cast<double*>(blas_malloc(16, new_cholesky_size * new_cholesky_size * sizeof(double)));
-            }
-            else {
-                // can reuse existing allocation.
-                new_cholesky = current_cholesky;
-                new_cholesky_size = current_cholesky_size;
-            }
-
-            lasso_update_cholesky_d(n, A, lda, current_cholesky, current_cholesky_size,
-                                    new_cholesky, new_cholesky_size,
+            lasso_update_cholesky_d(n, A, lda, L, ldl, L, ldl,
                                     active_index.size(), active_index.data(),
                                     current_index.size(), current_index.data());
-            
-            if (new_cholesky != current_cholesky) {
-                // if we had to allocate, free previous memory and reset pointers.
-                blas_free(current_cholesky);
-                current_cholesky = new_cholesky;
-                current_cholesky_size = new_cholesky_size;
-            }
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.
-            current_cholesky_size = num_active;
-            current_cholesky = static_cast<double*>(blas_malloc(16, current_cholesky_size * current_cholesky_size * sizeof(double)));
-            compute_cholesky(n, current_cholesky_size, current_index.data(), A, lda, current_cholesky, current_cholesky_size);
+            compute_cholesky(n, num_active, current_index.data(), A, lda, L, ldl);
         }
+
+        L_active = num_active;
 
         // update the active index
         std::swap(active_index, current_index);
@@ -218,13 +213,12 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         }
 
         // compute the leverage value.
-        lasso_compute_leverage_cholesky_d(n, A, lda, current_cholesky, current_cholesky_size,
-                                          num_active, active_index.data(), leverage);
+        lasso_compute_leverage_cholesky_d(n, A, lda, L, ldl, num_active, active_index.data(), leverage);
         // compute the current ALO vlue.
         alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage, 1);
     }
 
     // free all the buffers
-    blas_free(current_cholesky);
+    blas_free(L);
     blas_free(leverage);
 }

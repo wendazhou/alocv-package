@@ -23,6 +23,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     double* B = mxGetDoubles(prhs[2]);
     mwSize n = mxGetM(prhs[0]);
     mwSize p = mxGetN(prhs[0]);
+
+    if(mxGetM(prhs[2]) != p) {
+        mexErrMsgIdAndTxt("alocv:alo_lasso_mex:compatibility", "The regression matrix and fitted values dimension do not match.");
+    }
+
     mwSize num_tuning = mxGetN(prhs[2]);
 
     plhs[0] = mxCreateDoubleMatrix(num_tuning, 1, mxREAL);
