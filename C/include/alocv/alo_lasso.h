@@ -1,6 +1,8 @@
 #ifndef WENDA_ALO_LASSO_H_INCLUDED
 #define WENDA_ALO_LASSO_H_INCLUDED
 
+#include "alo_config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,7 +21,8 @@ extern "C" {
  * @param[in] tolerance The tolerance to determine the active set.
  * @param[out] alo The alo values.
  */ 
-void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb, double* y, int incy, double tolerance, double* alo);
+void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, double* A, blas_size lda,
+                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo);
 
 /*! Utility function to update the Cholesky decomposition along the lasso path.
  *
@@ -45,7 +48,8 @@ void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, doubl
  *      active set in the order in which they appear in the decomposition.
  * 
  */
-void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo, int len_index, int* index, int len_index_new, int* index_new);
+void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldlo,
+                             blas_size len_index, int* index, blas_size len_index_new, blas_size* index_new);
 
 /*! Utility function to compute the leverage value from the cholesky decomposition maintained by the algorithm.
  *
@@ -58,7 +62,8 @@ void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, doub
  * @param[in] index The index of the active set.
  * @param[out] leverage The computed leverage values.
  */
-void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl, int k, int* index, double* leverage);
+void lasso_compute_leverage_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl,
+                                       blas_size k, blas_size* index, double* leverage);
 
 #ifdef __cplusplus
 }

@@ -23,6 +23,16 @@ inline void* blas_malloc(size_t alignment, size_t size) {
 inline void blas_free(void* ptr) {
     mkl_free(ptr);
 }
+#elif MATLAB_MEX_FILE
+#include "mex.h"
+
+inline void* blas_malloc(size_t alignment, size_t size) {
+    return mxMalloc(size);
+}
+
+inline void blas_free(void* ptr) {
+    return mxFree(ptr);
+}
 #else
 #include "stdlib.h"
 

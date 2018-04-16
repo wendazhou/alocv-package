@@ -10,19 +10,19 @@
 #include <cmath>
 
 
-void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldol,
-                           int len_index, int* index, int len_index_new, int* index_new) {
+void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldol,
+                             blas_size len_index, blas_size* index, blas_size len_index_new, blas_size* index_new) {
     // First compute the columns to add and remove from the matrix to update it.
-    std::vector<int> start_index(index, index + len_index);
-    std::vector<int> end_index(index_new, index_new + len_index_new);
+    std::vector<blas_size> start_index(index, index + len_index);
+    std::vector<blas_size> end_index(index_new, index_new + len_index_new);
 
-    std::vector<int> active_index(start_index);
+    std::vector<blas_size> active_index(start_index);
 
     std::sort(start_index.begin(), start_index.end());
     std::sort(end_index.begin(), end_index.end());
 
-    std::vector<int> index_added;
-    std::vector<int> index_removed;
+    std::vector<blas_size> index_added;
+    std::vector<blas_size> index_removed;
 
     std::set_difference(
         end_index.begin(), end_index.end(),
@@ -35,9 +35,9 @@ void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, doub
         std::back_inserter(index_removed));
     
     // Delete all unnecessary columns first.
-    for(int i: index_removed) {
+    for(auto i: index_removed) {
         auto it = std::find(active_index.begin(), active_index.end(), i);
-        int loc = std::distance(active_index.begin(), it);
+        auto loc = std::distance(active_index.begin(), it);
 
         cholesky_delete_d(active_index.size(), loc, L, ldl, Lo, ldol);
 
@@ -49,12 +49,12 @@ void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, doub
     double* b = static_cast<double*>(blas_malloc(16, end_index.size() * sizeof(double)));
 
     // Append all necessary indices to reach the desired state.
-    for(int i: index_added) {
-        int one = 1;
+    for(auto i: index_added) {
+        blas_size one = 1;
         double* current_col = A + lda * i;
         double c = ddot(&n, current_col, &one, current_col, &one);
 
-        for(int j = 0; j < active_index.size(); ++j) {
+        for(auto j = 0; j < active_index.size(); ++j) {
             b[j] = ddot(&n, A + active_index[j] * lda, &one, A + i * lda, &one);
         }
 
@@ -73,27 +73,34 @@ void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, doub
 }
 
 
-void lasso_compute_leverage_cholesky_d(int n, double* A, int lda, double* L, int ldl, int k, int* index, double* leverage) {
+void lasso_compute_leverage_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl,
+                                       blas_size k, blas_size* index, double* leverage) {
     double* W = static_cast<double*>(blas_malloc(16, n * k * sizeof(double)));
 
-    for(int i = 0; i < k; ++i) {
+    for(blas_size i = 0; i < k; ++i) {
         memcpy(W + n * i, A + index[i] * lda, n * sizeof(double));
     }
 
     double one_d = 1.0;
     dtrsm("R", "L", "T", "N", &n, &k, &one_d, L, &ldl, W, &n);
 
-    for(int i = 0; i < n; ++i) {
+    for(blas_size i = 0; i < n; ++i) {
         leverage[i] = ddot(&k, W + i, &n, W + i, &n);
     }
 
     blas_free(W);
 }
 
-std::vector<int> find_active_set(int p, double* beta, double tolerance) {
-    std::vector<int> result;
+/*! For a given coefficient set beta, finds the active set by a magnitude-based rule.
+ *
+ *  @param[in] p The number of coefficients.
+ *  @param[in] beta A pointer to the coefficients.
+ *  @param[in] tolerance The tolerance to determine which values are 0.
+ */
+std::vector<blas_size> find_active_set(blas_size p, double* beta, double tolerance) {
+    std::vector<blas_size> result;
 
-    for(int i = 0; i < p; ++i) {
+    for(blas_size i = 0; i < p; ++i) {
         if (std::abs(beta[i]) > tolerance) {
             result.push_back(i);
         }
@@ -102,7 +109,8 @@ std::vector<int> find_active_set(int p, double* beta, double tolerance) {
     return result;
 }
 
-double compute_alo(int n, int p, double* A, int lda, double* y, double* beta, double* leverage, int incl) {
+double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y,
+                   double* beta, double* leverage, blas_size incl) {
     double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
     // temp = y
@@ -110,14 +118,14 @@ double compute_alo(int n, int p, double* A, int lda, double* y, double* beta, do
 
     double one_d = 1.0;
     double min_one_d = -1.0;
-    int one_i = 1;
+    blas_size one_i = 1;
 
     // temp = X * beta - y
     dgemv("N", &n, &p, &one_d, A, &lda, beta, &one_i, &min_one_d, temp, &one_i);
 
     double acc = 0;
 
-    for(int i = 0; i < n; ++i) {
+    for(blas_size i = 0; i < n; ++i) {
         double res = temp[i] / (1 - leverage[incl * i]);
         acc += res * res;
     }
@@ -127,28 +135,29 @@ double compute_alo(int n, int p, double* A, int lda, double* y, double* beta, do
     return acc / n;
 }
 
-void compute_cholesky(int n, int k, int* index, double* A, int lda, double* L, int ldl) {
-    int one = 1;
+void compute_cholesky(blas_size n, blas_size k, blas_size* index, double* A, blas_size lda, double* L, blas_size ldl) {
+    blas_size one = 1;
 
-    for(int j = 0; j < k; ++j) {
-        for(int i = j; i < k; ++i) {
+    for(blas_size j = 0; j < k; ++j) {
+        for(blas_size i = j; i < k; ++i) {
             L[i + ldl * j] = ddot(&n, A + lda * index[i], &one, A + lda * index[j], &one);
         }
     }
 
-    int info;
+    blas_size info;
 
     dpotrf("L", &k, L, &ldl, &info);
 }
 
-void lasso_compute_alo_d(int n, int p, int m, double* A, int lda, double* B, int ldb, double* y, int incy, double tolerance, double* alo) {
-    std::vector<int> active_index;
+void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
+                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo) {
+    std::vector<blas_size> active_index;
     double* current_cholesky = nullptr;
     double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
-    int current_cholesky_size = 0;
+    blas_size current_cholesky_size = 0;
 
-    for(int i = 0; i < m; ++i) {
-        std::vector<int> current_index = find_active_set(p, B + ldb * i, tolerance);
+    for(blas_size i = 0; i < m; ++i) {
+        std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
 
         auto num_active = current_index.size();
 
@@ -165,7 +174,7 @@ void lasso_compute_alo_d(int n, int p, int m, double* A, int lda, double* B, int
         if (current_cholesky) {
             // update our cholesky decomposition
             double* new_cholesky;
-            int new_cholesky_size;
+            blas_size new_cholesky_size;
 
             if (current_cholesky_size < num_active) {
                 // need to allocate space for new cholesky decomposition.
@@ -216,6 +225,6 @@ void lasso_compute_alo_d(int n, int p, int m, double* A, int lda, double* B, int
     }
 
     // free all the buffers
-    mkl_free(current_cholesky);
-    mkl_free(leverage);
+    blas_free(current_cholesky);
+    blas_free(leverage);
 }
