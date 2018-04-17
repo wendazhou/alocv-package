@@ -76,10 +76,10 @@ cpdef choldelete(L, i, out=None):
 cdef void _cholappend_d(double[::view.contiguous, :] L, double[::view.contiguous, :] Lo, double[:] b, double c) nogil:
     cdef int n = L.shape[0]
     cdef int ldl = L.strides[1] // sizeof(double)
-    cdef int lodl = Lo.strides[1] // sizeof(double)
+    cdef int ldol = Lo.strides[1] // sizeof(double)
     cdef int incb = b.strides[0] // sizeof(double)
 
-    cholesky_append_d(n, &L[0, 0], ldl, &b[0], incb, c, &Lo[0, 0], lodl)
+    cholesky_append_d(n, &L[0, 0], ldl, &b[0], incb, c, &Lo[0, 0], ldol)
 
 @cython.embedsignature(True)
 def cholappend(L, b, c, out=None):
@@ -109,8 +109,48 @@ cdef extern from "alocv/alo_lasso.h":
     cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo,
                                       int len_index, int* index, int len_index_new, int* index_new) nogil
     cdef void lasso_compute_leverage_cholesky_d(int n, int k, double* W, int ldw, double* L, int ldl, double* leverage) nogil
+    cdef void lasso_update_cholesky_w_d(int n, double* A, int lda, double* L, int ldl,
+                                        double* W, int ldw, int len_index, int* index,
+                                        int len_index_new, int* index_new) nogil
     cdef void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb,
                                   double* y, int incy, double tolerance, double* alo) nogil
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _lasso_update_cholesky_w_d(double[::view.contiguous, :] A,
+                                     double[::view.contiguous, :] L,
+                                     double[::view.contiguous, :] W,
+                                     int[::1] index, int[::1] index_new) nogil:
+    cdef int n = A.shape[0]
+    cdef int lda = A.strides[1] // sizeof(double)
+    cdef int ldl = L.strides[1] // sizeof(double)
+    cdef int ldw = W.strides[1] // sizeof(double)
+
+    lasso_update_cholesky_w_d(n, &A[0, 0], lda, &L[0, 0], ldl, &W[0, 0], ldw,
+                              len(index), &index[0], len(index_new), &index_new[0])
+
+@cython.embedsignature(True)
+def lasso_update_cholesky_w(X, L, index, index_new, W=None, overwrite_L=False):
+    cdef int[::1] index_view = np.array(index, dtype=np.int32)
+    cdef int[::1] index_new_view = np.array(index_new, dtype=np.int32)
+
+    n = X.shape[0]
+    k_old = len(index)
+    k_new = len(index_new_view)
+
+    if not overwrite_L:
+        L_old = L
+        k_max = max(k_old, k_new)
+        L = np.empty((k_max, k_max), order='F')
+        np.copyto(L[:k_old, :k_old], L_old)
+
+    if W is None:
+        W = np.empty((n, k_new), order='F')
+
+    _lasso_update_cholesky_w_d(X, L, W, index_view, index_new_view)
+    return L[:k_new, :k_new], index_new_view
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

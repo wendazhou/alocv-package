@@ -29,14 +29,14 @@ void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, doubl
     blas_free(temp);
 }
 
-void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_size incb, double c, double* Lo, blas_size ldol) {
+void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_size incb, double c, double* Lo, blas_size ldlo) {
     int one = 1;
     double one_d = 1.0;
 
-    dlacpy("L", &n, &n, L, &ldl, Lo, &ldol);
-    dcopy(&n, b, &incb, Lo + n, &ldol);
-    dtrsm("R", "L", "C", "N", &one, &n, &one_d, Lo, &ldol, Lo + n, &ldol);
+    dlacpy("L", &n, &n, L, &ldl, Lo, &ldlo);
+    dcopy(&n, b, &incb, Lo + n, &ldlo);
+	dtrsm("R", "L", "C", "N", &one, &n, &one_d, Lo, &ldlo, Lo + n, &ldlo);
 
-    double border_inner = ddot(&n, Lo + n, &ldol, Lo + n, &ldol);
-    Lo[n * ldol + n] = sqrt(c - border_inner);
+    double border_inner = ddot(&n, Lo + n, &ldlo, Lo + n, &ldlo);
+    Lo[n * ldlo + n] = sqrt(c - border_inner);
 }

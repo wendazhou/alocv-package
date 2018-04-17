@@ -7,9 +7,10 @@
 #include <iterator>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 
 
-void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldol,
+void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldlo,
                              blas_size len_index, blas_size* index, blas_size len_index_new, blas_size* index_new) {
     // First compute the columns to add and remove from the matrix to update it.
     std::vector<blas_size> start_index(index, index + len_index);
@@ -38,11 +39,11 @@ void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, b
         auto it = std::find(active_index.begin(), active_index.end(), i);
         auto loc = std::distance(active_index.begin(), it);
 
-        cholesky_delete_d(active_index.size(), loc, L, ldl, Lo, ldol);
+        cholesky_delete_d(active_index.size(), loc, L, ldl, Lo, ldlo);
 
         active_index.erase(it);
         L = Lo;
-        ldl = ldol;
+        ldl = ldlo;
     }
 
     double* b = static_cast<double*>(blas_malloc(16, end_index.size() * sizeof(double)));
@@ -57,14 +58,98 @@ void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, b
             b[j] = ddot(&n, A + active_index[j] * lda, &one, A + i * lda, &one);
         }
 
-        cholesky_append_d(active_index.size(), L, ldl, b, 1, c, Lo, ldol);
+        cholesky_append_d(active_index.size(), L, ldl, b, 1, c, Lo, ldlo);
 
         active_index.push_back(i);
         L = Lo;
-        ldl = ldol;
+        ldl = ldlo;
     }
 
     blas_free(b);
+
+    // index_new contains the corresponding set of indices.
+    assert(active_index.size() == len_index_new);
+    std::copy(active_index.begin(), active_index.end(), index_new);
+}
+
+void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
+							   double* L, blas_size ldl,
+							   double* W, blas_size ldw, 
+							   blas_size len_index, blas_size* index,
+							   blas_size len_index_new, blas_size* index_new) {
+    // First compute the columns to add and remove from the matrix to update it.
+    std::vector<blas_size> start_index(index, index + len_index);
+    std::vector<blas_size> end_index(index_new, index_new + len_index_new);
+
+    std::vector<blas_size> active_index(start_index);
+
+    std::sort(start_index.begin(), start_index.end());
+    std::sort(end_index.begin(), end_index.end());
+
+    std::vector<blas_size> index_added;
+    std::vector<blas_size> index_removed;
+
+    std::set_difference(
+        end_index.begin(), end_index.end(),
+        start_index.begin(), start_index.end(),
+        std::back_inserter(index_added));
+    
+    std::set_difference(
+        start_index.begin(), start_index.end(),
+        end_index.begin(), end_index.end(),
+        std::back_inserter(index_removed));
+    
+    // Delete all unnecessary columns first.
+    for(auto i: index_removed) {
+        auto it = std::find(active_index.begin(), active_index.end(), i);
+        auto loc = std::distance(active_index.begin(), it);
+
+        cholesky_delete_d(active_index.size(), loc, L, ldl, L, ldl);
+        active_index.erase(it);
+    }
+	
+	{
+		std::size_t col_w = 0;
+
+		// Once we have deleted required columns, we are only appending to the
+		// end. This is a good time to construct the W matrix.
+		// First add all the existing indices.
+		for (auto col_a: active_index) {
+			std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+			col_w += 1;
+		}
+
+		// Add the new indices.
+		for (auto col_a : index_added) {
+			std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+			col_w += 1;
+		}
+	}
+
+	std::printf("Created W instance");
+
+	// Precompute the border of the matrix we are appending.
+	blas_size num_existing = active_index.size();
+	blas_size num_added = index_added.size();
+	blas_size num_total = num_existing + num_added;
+	double one_d = 1.0;
+	double zero_d = 0.0;
+	dgemm("T", "N", &num_total, &num_added, &n, &one_d, W, &ldw, W + num_existing * ldw, &ldw, &zero_d, L + num_existing * ldl, &ldl);
+
+	std::printf("Computed GEMM");
+
+	// Append all necessary indices to reach the desired state.
+	for (auto i : index_added) {
+		blas_size one = 1;
+		double* current_col = A + lda * i;
+		double c = ddot(&n, current_col, &one, current_col, &one);
+
+		auto col_l = active_index.size();
+		cholesky_append_d(col_l, L, ldl, L + col_l * ldl, 1, c, L, ldl);
+
+		active_index.push_back(i);
+	}
+
 
     // index_new contains the corresponding set of indices.
     assert(active_index.size() == len_index_new);
