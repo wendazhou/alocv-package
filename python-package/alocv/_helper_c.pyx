@@ -106,8 +106,6 @@ def cholappend(L, b, c, out=None):
 
 
 cdef extern from "alocv/alo_lasso.h":
-    cdef void lasso_update_cholesky_d(int n, double* A, int lda, double* L, int ldl, double* Lo, int ldlo,
-                                      int len_index, int* index, int len_index_new, int* index_new) nogil
     cdef void lasso_compute_leverage_cholesky_d(int n, int k, double* W, int ldw, double* L, int ldl, double* leverage) nogil
     cdef void lasso_update_cholesky_w_d(int n, double* A, int lda, double* L, int ldl,
                                         double* W, int ldw, int len_index, int* index,
@@ -138,48 +136,25 @@ def lasso_update_cholesky_w(X, L, index, index_new, W=None, overwrite_L=False):
     n = X.shape[0]
     k_old = len(index)
     k_new = len(index_new_view)
+    k_max = max(k_old, k_new)
 
     if not overwrite_L:
         L_old = L
-        k_max = max(k_old, k_new)
         L = np.empty((k_max, k_max), order='F')
         np.copyto(L[:k_old, :k_old], L_old)
+
 
     if W is None:
         W = np.empty((n, k_new), order='F')
 
     _lasso_update_cholesky_w_d(X, L, W, index_view, index_new_view)
+
+    if k_new > k_old and overwrite_L:
+        # access base to subset correctly
+        L = L.base
+
     return L[:k_new, :k_new], index_new_view
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void _lasso_update_cholesky(double[::view.contiguous, :] A,
-                                 double[::view.contiguous, :] L,
-                                 double[::view.contiguous, :] Lo,
-                                 int[::1] index, int[::1] index_new) nogil:
-    cdef int n = A.shape[0]
-    cdef int lda = A.strides[1] // sizeof(double)
-    cdef int ldl = L.strides[1] // sizeof(double)
-    cdef int ldlo = Lo.strides[1] // sizeof(double)
-
-    lasso_update_cholesky_d(n, &A[0, 0], lda, &L[0, 0], ldl, &Lo[0, 0], ldlo,
-                          len(index), &index[0], len(index_new), &index_new[0])
-
-
-@cython.embedsignature(True)
-def lasso_update_cholesky(X, L, index, index_new, out=None):
-    cdef int[::1] index_view = np.array(index, dtype=np.int32)
-    cdef int[::1] index_new_view = np.array(index_new, dtype=np.int32)
-
-    if out is None:
-        n_out = len(index_new_view)
-        out = np.zeros((n_out, n_out), order='F')
-
-    _lasso_update_cholesky(X, L, out, index_view, index_new_view)
-
-    return out, index_new_view
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -224,7 +199,18 @@ cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
 
 
 @cython.embedsignature(True)
-def lasso_compute_alo(X, y, beta_hats, tolerance=1e-5, out=None):
+def lasso_compute_alo(np.ndarray[double, ndim=2] X, double[:] y,
+                      np.ndarray[double, ndim=2] beta_hats, double tolerance=1e-5, out=None):
+    """ Compute the ALO estimate for the LASSO.
+
+    Parameters
+    ----------
+    X: The sensing matrix.
+    y: The observation vector.
+    beta_hats: The fitted coefficients.
+    tolerance: A scalar value indicating the tolerance.
+    out: Optional. If not None, a vector to store the ALO values.
+    """
     if out is None:
         out = np.empty(beta_hats.shape[1])
 

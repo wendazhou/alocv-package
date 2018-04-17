@@ -10,68 +10,6 @@
 #include <cstdio>
 
 
-void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldlo,
-                             blas_size len_index, blas_size* index, blas_size len_index_new, blas_size* index_new) {
-    // First compute the columns to add and remove from the matrix to update it.
-    std::vector<blas_size> start_index(index, index + len_index);
-    std::vector<blas_size> end_index(index_new, index_new + len_index_new);
-
-    std::vector<blas_size> active_index(start_index);
-
-    std::sort(start_index.begin(), start_index.end());
-    std::sort(end_index.begin(), end_index.end());
-
-    std::vector<blas_size> index_added;
-    std::vector<blas_size> index_removed;
-
-    std::set_difference(
-        end_index.begin(), end_index.end(),
-        start_index.begin(), start_index.end(),
-        std::back_inserter(index_added));
-    
-    std::set_difference(
-        start_index.begin(), start_index.end(),
-        end_index.begin(), end_index.end(),
-        std::back_inserter(index_removed));
-    
-    // Delete all unnecessary columns first.
-    for(auto i: index_removed) {
-        auto it = std::find(active_index.begin(), active_index.end(), i);
-        auto loc = std::distance(active_index.begin(), it);
-
-        cholesky_delete_d(active_index.size(), loc, L, ldl, Lo, ldlo);
-
-        active_index.erase(it);
-        L = Lo;
-        ldl = ldlo;
-    }
-
-    double* b = static_cast<double*>(blas_malloc(16, end_index.size() * sizeof(double)));
-
-    // Append all necessary indices to reach the desired state.
-    for(auto i: index_added) {
-        blas_size one = 1;
-        double* current_col = A + lda * i;
-        double c = ddot(&n, current_col, &one, current_col, &one);
-
-        for(auto j = 0; j < active_index.size(); ++j) {
-            b[j] = ddot(&n, A + active_index[j] * lda, &one, A + i * lda, &one);
-        }
-
-        cholesky_append_d(active_index.size(), L, ldl, b, 1, c, Lo, ldlo);
-
-        active_index.push_back(i);
-        L = Lo;
-        ldl = ldlo;
-    }
-
-    blas_free(b);
-
-    // index_new contains the corresponding set of indices.
-    assert(active_index.size() == len_index_new);
-    std::copy(active_index.begin(), active_index.end(), index_new);
-}
-
 void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 							   double* L, blas_size ldl,
 							   double* W, blas_size ldw, 
@@ -126,8 +64,6 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 		}
 	}
 
-	std::printf("Created W instance");
-
 	// Precompute the border of the matrix we are appending.
 	blas_size num_existing = active_index.size();
 	blas_size num_added = index_added.size();
@@ -135,8 +71,6 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 	double one_d = 1.0;
 	double zero_d = 0.0;
 	dgemm("T", "N", &num_total, &num_added, &n, &one_d, W, &ldw, W + num_existing * ldw, &ldw, &zero_d, L + num_existing * ldl, &ldl);
-
-	std::printf("Computed GEMM");
 
 	// Append all necessary indices to reach the desired state.
 	for (auto i : index_added) {
@@ -287,10 +221,8 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         // First, we need to make sure our Cholesky decomposition is up to date.
         if (L_active > 0) {
             // update our cholesky decomposition
-            lasso_update_cholesky_d(n, A, lda, L, ldl, L, ldl,
-                                    active_index.size(), active_index.data(),
-                                    current_index.size(), current_index.data());
-            create_w(n, W, ldw, A, lda, current_index);
+			lasso_update_cholesky_w_d(n, A, lda, L, ldl, W, ldw,
+				active_index.size(), active_index.data(), current_index.size(), current_index.data());
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.

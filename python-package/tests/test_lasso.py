@@ -58,7 +58,6 @@ def test_compute_leverage_cholesky(method):
 
 
 @pytest.mark.parametrize("method", [lasso._update_cholesky,
-                                    native_impl.lasso_update_cholesky,
                                     native_impl.lasso_update_cholesky_w])
 def test_update_cholesky_single(method):
     X, y = make_test_case(50, 5, 2)
@@ -76,7 +75,6 @@ def test_update_cholesky_single(method):
 
 
 @pytest.mark.parametrize("method", [lasso._update_cholesky,
-                                    native_impl.lasso_update_cholesky,
                                     native_impl.lasso_update_cholesky_w])
 def test_update_cholesky_no_order(method):
     X, y = make_test_case(50, 5, 2)
@@ -98,7 +96,6 @@ def test_update_cholesky_no_order(method):
 
 
 @pytest.mark.parametrize("method", [lasso._update_cholesky,
-                                    native_impl.lasso_update_cholesky,
                                     native_impl.lasso_update_cholesky_w])
 def test_update_cholesky_multiple(method):
     X, y = make_test_case(50, 5, 2)
@@ -115,7 +112,7 @@ def test_update_cholesky_multiple(method):
         - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 0.01
 
 
-@pytest.mark.parametrize("method", [lasso._update_cholesky, native_impl.lasso_update_cholesky, native_impl.lasso_update_cholesky_w])
+@pytest.mark.parametrize("method", [lasso._update_cholesky, native_impl.lasso_update_cholesky_w])
 def test_update_cholesky_remove(method):
     X, y = make_test_case(50, 5, 2)
 
@@ -132,7 +129,6 @@ def test_update_cholesky_remove(method):
 
 
 @pytest.mark.parametrize("method", [lasso._update_cholesky,
-                                    native_impl.lasso_update_cholesky,
                                     native_impl.lasso_update_cholesky_w])
 def test_update_cholesky_mixed(method):
     X, y = make_test_case(50, 5, 2)
@@ -160,10 +156,10 @@ def test_update_cholesky_inplace():
 
     L = np.empty_like(L_new_truth, order='F')
     L[:L_orig.shape[0], :L_orig.shape[1]] = L_orig
-    L_new, index_new = native_impl.lasso_update_cholesky(
-        X, L[:-1, :-1], np.flatnonzero(E), np.flatnonzero(E_new), out=L)
+    L_new, index_new = native_impl.lasso_update_cholesky_w(X, L, np.flatnonzero(E), np.flatnonzero(E_new),
+                                                           overwrite_L=True)
 
-    assert L_new is L
+    assert L_new is L or L_new.base is L
     assert np.linalg.norm(
         lasso._compute_leverage_cholesky(X, L_new, index_new)
         - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5

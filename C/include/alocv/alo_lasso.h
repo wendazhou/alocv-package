@@ -24,32 +24,6 @@ extern "C" {
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, double* A, blas_size lda,
                          double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo);
 
-/*! Utility function to update the Cholesky decomposition along the lasso path.
- *
- * An essential component in computing the leverage values for the LASSO estimator is to compute the
- * inverse of the covariance of the active set. We do this by maintaining the Cholesky decomposition
- * of the covariance of the active set along the solution path, and update this decomposition iteratively
- * as we go down the solution path.
- * 
- * For performance reasons, we only append new active coordinates at the end of the decomposition.
- * For this reason, we need to maintain the corresponding ordering of the elements in our decomposition.
- * 
- * @param[in] n The number of observations (or rows) of A
- * @param[in] A The regression matrix
- * @param[in] lda The leading dimension of A
- * @param[in] L The Cholesky decomposition of the current active set in lower triangular form.
- * @param[in] ldl The leading dimension of L
- * @param[out] Lo The updated Cholesky decomposition. May be the same as L.
- * @param[in] ldlo The leading dimension of Lo.
- * @param[in] len_index The size of the current active set.
- * @param[in] index The indices of the columns that are currently active.
- * @param[in] len_index_new The size of the new active set.
- * @param[in,out] index_new The indices of the new active set. This will be re-ordered to represent the new
- *      active set in the order in which they appear in the decomposition.
- * 
- */
-void lasso_update_cholesky_d(blas_size n, double* A, blas_size lda, double* L, blas_size ldl, double* Lo, blas_size ldlo,
-                             blas_size len_index, int* index, blas_size len_index_new, blas_size* index_new);
 
 /*! Utility function to update the Cholesky decomposition along the lasso path.
  *
