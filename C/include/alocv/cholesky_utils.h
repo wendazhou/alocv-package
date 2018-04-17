@@ -21,6 +21,20 @@ void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_si
  */
 void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, double* Lo, blas_size ldlo);
 
+
+/*! Update the Cholesky representation when deleting a column.
+ *
+ * This function computes the update of the Cholesky decomposition L
+ * whene deleting a single column at location i from the original matrix.
+ * The matrix L is mutated in place to reflect the result.
+ *
+ * @param[in] n The size of the current Cholesky decomposition
+ * @param[in] i The index of the column to delete.
+ * @param[in,out] L The current decomposition.
+ * @param[in] ldl The leading dimension of L.
+ */
+void cholesky_delete_inplace_d(blas_size n, blas_size i, double* L, blas_size ldl);
+
 /*! Update the Cholesky representation when adding o column.
  *
  * This function computes the update of the Cholesky decomposition L

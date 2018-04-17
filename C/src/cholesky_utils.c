@@ -2,6 +2,8 @@
 #include "blas_configuration.h"
 #include "math.h"
 #include "assert.h"
+#include "string.h"
+#include "stdio.h"
 
 
 void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx) {
@@ -32,19 +34,25 @@ void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, doubl
     blas_free(temp);
 }
 
+void cholesky_delete_inplace_d(blas_size n, blas_size i, double* L, blas_size ldl) {
+    int s22_length = n - i - 1;
+    int one = 1;
+
+    double* temp = blas_malloc(16, s22_length * sizeof(double));
+	memcpy(temp, L + i * ldl + (i + 1), s22_length * sizeof(double));
+    dlacpy("A", &s22_length, &i, L + i + 1, &ldl, L + i, &ldl);
+    dlacpy("L", &s22_length, &s22_length, L + (i + 1) * ldl + (i + 1), &ldl, L + i * ldl + i, &ldl);
+
+    cholesky_update_d(s22_length, L + i * ldl + i, ldl, temp, 1);
+	blas_free(temp);
+}
+
 void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_size incb, double c, double* Lo, blas_size ldlo) {
-    blas_size one = 1;
-    double one_d = 1.0;
+	dlacpy("L", &n, &n, L, &ldl, Lo, &ldlo);
+	dcopy(&n, b, &incb, Lo + n, &ldlo);
+	Lo[n * ldlo + n] = c;
 
-	if(L != Lo || ldl != ldlo) {
-		dlacpy("L", &n, &n, L, &ldl, Lo, &ldlo);
-	}
-
-    dcopy(&n, b, &incb, Lo + n, &ldlo);
-	dtrsm("R", "L", "C", "N", &one, &n, &one_d, Lo, &ldlo, Lo + n, &ldlo);
-
-    double border_inner = ddot(&n, Lo + n, &ldlo, Lo + n, &ldlo);
-    Lo[n * ldlo + n] = sqrt(c - border_inner);
+	cholesky_append_inplace_d(n, Lo, ldlo);
 }
 
 void cholesky_append_inplace_d(blas_size n, double* L, blas_size ldl) {

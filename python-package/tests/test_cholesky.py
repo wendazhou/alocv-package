@@ -154,7 +154,7 @@ def test_cholappend_cython():
     L_large_truth = scipy.linalg.cholesky(S, lower=True)
     L_large = native_impl.cholappend(L, S[-1, :-1], S[-1, -1])
 
-    assert np.linalg.norm(np.triu(L_large) - np.triu(L_large_truth)) < 1e-3
+    assert np.linalg.norm(np.tril(L_large) - np.tril(L_large_truth)) < 1e-3
 
 
 def test_cholappend_cython_inplace():

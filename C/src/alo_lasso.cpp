@@ -42,7 +42,7 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
         auto it = std::find(active_index.begin(), active_index.end(), i);
         auto loc = std::distance(active_index.begin(), it);
 
-        cholesky_delete_d(active_index.size(), loc, L, ldl, L, ldl);
+		cholesky_delete_inplace_d(active_index.size(), loc, L, ldl);
         active_index.erase(it);
     }
 	
@@ -74,7 +74,13 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 
 	// Compute the covariance of the added columns. This places it in the lower
 	// half of the existing decomposition L.
+#ifdef USE_MKL
+	dgemm("T", "N", &num_added, &num_existing, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
+	dgemmt("L", "T", "N", &num_added, &n, &one_d, W + num_existing * ldw, &ldw, W + num_existing * ldw, &ldw,
+		&zero_d, L + num_existing * ldl + num_existing, &ldl);
+#else
 	dgemm("T", "N", &num_added, &num_total, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
+#endif
 
 	// Append all necessary indices to reach the desired state.
 	for (auto i : index_added) {
