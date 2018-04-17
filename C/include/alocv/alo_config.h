@@ -1,7 +1,7 @@
 #ifndef WENDA_ALO_CONFIG_H_INCLUDED
 #define WENDA_ALO_CONFIG_H_INCLUDED
 
-#if MATLAB_MEX_FILE
+#if defined(MATLAB_MEX_FILE) || defined(MKL_ILP64)
 #include "stddef.h"
 typedef ptrdiff_t blas_size;
 #else
