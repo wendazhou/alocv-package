@@ -75,10 +75,9 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 	// Append all necessary indices to reach the desired state.
 	for (auto i : index_added) {
 		blas_size one = 1;
-		double* current_col = A + lda * i;
-		double c = ddot(&n, current_col, &one, current_col, &one);
-
 		auto col_l = active_index.size();
+
+		double c = L[col_l * ldl + col_l];
 		cholesky_append_d(col_l, L, ldl, L + col_l * ldl, 1, c, L, ldl);
 
 		active_index.push_back(i);
