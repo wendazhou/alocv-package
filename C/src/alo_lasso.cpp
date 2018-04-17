@@ -70,7 +70,11 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 	blas_size num_total = num_existing + num_added;
 	double one_d = 1.0;
 	double zero_d = 0.0;
-	dgemm("T", "N", &num_total, &num_added, &n, &one_d, W, &ldw, W + num_existing * ldw, &ldw, &zero_d, L + num_existing * ldl, &ldl);
+
+
+	// Compute the covariance of the added columns. This places it in the lower
+	// half of the existing decomposition L.
+	dgemm("T", "N", &num_added, &num_total, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
 
 	// Append all necessary indices to reach the desired state.
 	for (auto i : index_added) {
@@ -78,11 +82,10 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 		auto col_l = active_index.size();
 
 		double c = L[col_l * ldl + col_l];
-		cholesky_append_d(col_l, L, ldl, L + col_l * ldl, 1, c, L, ldl);
+		cholesky_append_inplace_d(col_l, L, ldl);
 
 		active_index.push_back(i);
 	}
-
 
     // index_new contains the corresponding set of indices.
     assert(active_index.size() == len_index_new);

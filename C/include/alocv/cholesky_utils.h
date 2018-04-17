@@ -19,14 +19,31 @@ void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_si
  * This function computes the update of the Cholesky decomposition L
  * when deleting a single column at location i from the original matrix.
  */
-void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, double* Lo, blas_size ldol);
+void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, double* Lo, blas_size ldlo);
 
 /*! Update the Cholesky representation when adding o column.
  *
  * This function computes the update of the Cholesky decomposition L
  * when adding a single column at the end of the original matrix.
  */
-void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_size incb, double c, double* Lo, blas_size ldol);
+void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_size incb, double c, double* Lo, blas_size ldlo);
+
+
+/*! Update the Cholesky representation when adding one column inplace.
+ *
+ * This function computes the update of the Cholesky decomposition L,
+ * when adding a single row at the end of the original matrix.
+ *
+ * This function operates entirely inplace, and assumes that the row being added
+ * to the matrix is stored in the last row of L. This function only accesses and modifies
+ * the lower triangular part of L.
+ *
+ * @param[in] n The size of the current Cholesky decomposition stored in L.
+ * @param[in,out] L The current decomposition, along with the new row added to the matrix.
+ *					Must be of size at least (n + 1) * ldl
+ * @param[in] ldl The leading dimension of L, must be at least n + 1.
+ */
+void cholesky_append_inplace_d(blas_size n, double* L, blas_size ldl);
 
 #ifdef __cplusplus
 }
