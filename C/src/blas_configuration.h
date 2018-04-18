@@ -4,6 +4,9 @@
 #include "stddef.h"
 
 #ifdef USE_MKL
+
+#define MKL_DIRECT_CALL
+
 #include "mkl.h"
 #include "mkl_blas.h"
 #include "mkl_lapack.h"
