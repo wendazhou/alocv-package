@@ -131,7 +131,7 @@ cdef extern from "alocv/alo_lasso.h":
                                         double* W, int ldw, int len_index, int* index,
                                         int len_index_new, int* index_new) nogil
     cdef void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb,
-                                  double* y, int incy, double tolerance, double* alo) nogil
+                                  double* y, int incy, double tolerance, double* alo, double* leverage) nogil
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -215,7 +215,7 @@ cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
     cdef int incy = y.strides[0] // sizeof(double)
 
     lasso_compute_alo_d(n, p, num_tuning, &A[0, 0], lda, &B[0, 0], ldb,
-                        &y[0], incy, tolerance, &alo[0])
+                        &y[0], incy, tolerance, &alo[0], NULL)
 
 
 @cython.embedsignature(True)

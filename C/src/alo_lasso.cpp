@@ -191,7 +191,8 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
 
 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
-                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo) {
+                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance,
+						 double* alo, double* leverage) {
     // Allocate necessary structures
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
 
@@ -203,7 +204,18 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
     blas_size ldw = n;
 
     std::vector<blas_size> active_index;
-    double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+
+	blas_size ld_leverage;
+	bool alloc_leverage;
+	if (leverage) {
+		alloc_leverage = false;
+		ld_leverage = n;
+	}
+	else {
+		alloc_leverage = true;
+		leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+		ld_leverage = 0;
+	}
 
     for(blas_size i = 0; i < m; ++i) {
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
@@ -245,12 +257,15 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         }
 
         // compute the leverage value.
-        lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage);
+        lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage + ld_leverage * i);
         // compute the current ALO vlue.
-        alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage, 1);
+        alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i, 1);
     }
 
     // free all the buffers
     blas_free(L);
-    blas_free(leverage);
+
+	if (alloc_leverage) {
+		blas_free(leverage);
+	}
 }

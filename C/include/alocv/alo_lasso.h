@@ -20,9 +20,12 @@ extern "C" {
  * @param[in] incy The increment of y.
  * @param[in] tolerance The tolerance to determine the active set.
  * @param[out] alo The alo values.
+ * @param[out] leverage If not NULL, a matrix which stores the leverage values for each observation
+						and tuning.
  */ 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, double* A, blas_size lda,
-                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance, double* alo);
+                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance,
+						 double* alo, double* leverage);
 
 
 /*! Utility function to update the Cholesky decomposition along the lasso path.

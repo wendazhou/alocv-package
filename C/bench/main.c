@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
 	double start = get_current_time();
 
-	lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result);
+	lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
 
 	double end = get_current_time();
 
