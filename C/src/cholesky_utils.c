@@ -99,11 +99,23 @@ void cholesky_append_inplace_d(blas_size n, double* L, blas_size ldl) {
 }
 
 void cholesky_append_inplace_multiple_d(blas_size n, blas_size k, double* L, blas_size ldl) {
-	// This is currently a naive implementation of this function
-	// which performs a rank-k update by repeatedly performing a rank-1 update.
+	// Appending to the end of the Cholesky decomposition can be viewed in 3 parts
+	// 1) the existing upper left triangle is preserved
+	// 2) the bottom left rectangular part beneath that should be inverted by the existing Cholesky.
+	// 3) we need to compute a new Cholesky for the remaining bottom right triangle.
+
 	assert(ldl >= n + k);
 
-	for (blas_size m = 0; m < k; ++m) {
-		cholesky_append_inplace_d(n + m, L, ldl);
-	}
+	double one_d = 1.0;
+	double minus_one_d = -1.0;
+
+	dtrsm("R", "L", "T", "N", &k, &n, &one_d, L, &ldl, L + n, &ldl);
+#ifdef USE_MKL
+	dgemmt("L", "N", "T", &k, &n, &minus_one_d, L + n, &ldl, L + n, &ldl, &one_d, L + ldl * n + n, &ldl);
+#else
+	dgemm("N", "T", &k, &k, &n, &minus_one_d, L + n, &ldl, L + n, &ldl, &one_d, L + ldl * n + n, &ldl);
+#endif
+
+	blas_size info;
+	dpotrf("L", &k, L + ldl * n + n, &ldl, &info);
 }

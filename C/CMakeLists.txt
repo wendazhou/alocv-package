@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 project(alocv)
+
+include(CheckIPOSupported)
 
 find_library(mkl_core NAMES mkl_core libmkl_core
              HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
@@ -32,6 +34,11 @@ target_compile_definitions(alocv PUBLIC USE_MKL)
 target_include_directories(alocv PUBLIC include)
 target_include_directories(alocv PRIVATE src "${intel_mkl_include}")
 target_link_libraries(alocv PUBLIC ${MKL_LIBRARIES} ${intel_tbb})
+
+check_ipo_supported(RESULT ipo_supported)
+if(ipo_supported)
+	set_property(TARGET alocv PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 add_executable(bench bench/main.c)
 target_link_libraries(bench PRIVATE alocv)
