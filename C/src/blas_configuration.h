@@ -34,7 +34,7 @@ inline void* blas_malloc(size_t alignment, size_t size) {
 }
 
 inline void blas_free(void* ptr) {
-    return mxFree(ptr);
+    mxFree(ptr);
 }
 #else
 #include "stdlib.h"
