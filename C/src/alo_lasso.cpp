@@ -193,7 +193,7 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
     // at the end of the representation.
 
     for(int i = 0; i < current_index.size(); ++i) {
-        memcpy(W + i * ldw, A + current_index[i] * lda, n * sizeof(double));
+		std::copy(A + current_index[i] * lda, A + current_index[i] * lda + n, W + i * ldw);
     }
 }
 
