@@ -248,4 +248,21 @@ def test_choldelete_cython_inplace():
     L_small_inplace = native_impl.choldelete(L, p // 2, out=L[:-1, :-1])
 
     assert L_small_inplace.base is L
-    assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_inplace)) < 0.001
+    assert np.linalg.norm(np.tril(L_small) - np.tril(L_small_inplace)) < 1e-5
+
+
+def test_choldowndate():
+    random = np.random.RandomState(42)
+    p = 10
+    X = random.randn(2 * p, p)
+    S = np.dot(X.T, X)
+    x_update = 0.5 * random.randn(p)
+
+    L = scipy.linalg.cholesky(S, lower=False)
+
+    S_update = S - np.outer(x_update, x_update)
+
+    L_update_truth = scipy.linalg.cholesky(S_update, lower=False)
+    L_update = _cholesky.choldowndate(L, x_update, upper=True)
+
+    assert np.linalg.norm(np.triu(L_update_truth) - np.triu(L_update)) < 1e-5
