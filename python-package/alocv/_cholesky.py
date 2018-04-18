@@ -81,7 +81,7 @@ def choldowndate(L, x, upper=False):
     x = x.copy()
 
     for r in range(n):
-        a = x[r] / L[r, r]
+        a = -x[r] / L[r, r]
         alpha_curr = alpha_prev - a ** 2
 
         # Numerically zero or negative
@@ -89,9 +89,9 @@ def choldowndate(L, x, upper=False):
             raise np.linalg.LinAlgError('The Cholesky factor becomes nonpositive'
                               'with this downdate at the step {}'.format(r))
         beta_curr = np.sqrt(alpha_curr)
-        x[r+1:] -= a*L[r, r+1:]
+        x[r+1:] += a*L[r, r+1:]
         D[r, r:] *= beta_curr / beta_prev
-        D[r, r+1:] -= a/(beta_curr * beta_prev)*x[r+1:]
+        D[r, r+1:] += a/(beta_curr * beta_prev)*x[r+1:]
         alpha_prev = alpha_curr
         beta_prev = beta_curr
 

@@ -14,6 +14,20 @@ extern "C" {
  */
 void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx);
 
+/*! Downdate the Cholesky representation of a given matrix.
+ *
+ * This function computes the downdate of the Cholesky decomposition L
+ * by a rank one perturbation given by x. No checking is done to ensure validity.
+ * Note that this function mutates the variable x to store intermediate results.
+ *
+ * @param[in] n The size of the current decomposition.
+ * @param[in,out] L The decomposition to update.
+ * @param[in] ldl The leading dimension of L. Must be at least n.
+ * @param[in,out] x The vector to downdate L by.
+ * @param[in] incx The increment of x.
+ */
+void cholesky_downdate_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx);
+
 /*! Update the Cholesky representation when deleting a column.
  *
  * This function computes the update of the Cholesky decomposition L

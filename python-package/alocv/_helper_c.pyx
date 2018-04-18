@@ -9,6 +9,7 @@ from cython cimport view
 
 cdef extern from "alocv/cholesky_utils.h":
     cdef void cholesky_update_d(int n, double* L, int ldl, double * x, int incx) nogil
+    cdef void cholesky_downdate_d(int n, double* L, int ldl, double* x, int incx) nogil
     cdef void cholesky_delete_d(int n, int i, double* L, int ldl, double* Lo, int lodl) nogil
     cdef void cholesky_append_d(int n, double* L, int ldl, double* b, int incb, double c, double* Lo, int ldlo) nogil
 
@@ -36,8 +37,27 @@ cpdef cholupdate(L, x):
     cdef np.ndarray[double, ndim=1] x_copy = np.copy(x)
 
     _cholupdate_d(out, x_copy)
-
     return out
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _choldowndate_d(double[::view.contiguous, :] L, double[:] x) nogil:
+    cdef int ldl = L.strides[1] // sizeof(double)
+    cdef int incx = x.strides[0] // sizeof(double)
+    cholesky_downdate_d(len(x), &L[0, 0], ldl, &x[0], incx)
+
+
+@cython.embedsignature(True)
+def choldowndate(L, x, overwrite_x=False, overwrite_L=False):
+    if not overwrite_x:
+        x = np.copy(x)
+
+    if not overwrite_L:
+        L = np.copy(L, order='F')
+
+    _choldowndate_d(L, x)
+    return L
 
 
 @cython.boundscheck(False)

@@ -8,18 +8,47 @@
 
 void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx) {
     double c, s;
-    int incr = 1;
+    blas_size incr = 1;
 
     for(int k = 0; k < n; k++) {
-        int m = n - k - 1;
+        blas_size m = n - k - 1;
         drotg(L + ldl * k + k, x + incx * k, &c, &s);
         drot(&m, L + ldl * k + k + 1, &incr, x + incx * (k + 1), &incx, &c, &s);
     }
 }
 
+void cholesky_downdate_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx) {
+	blas_size one_i = 1;
+
+	double alpha;
+	double alpha_prev = 1.0;
+	double beta;
+	double beta_prev = 1.0;
+
+	for(blas_size k = 0; k < n; k++) {
+		blas_size remaining = n - k - 1;
+
+		double a = -x[k * incx] / L[k * ldl + k];
+		alpha = alpha_prev - a * a;
+		beta = sqrt(alpha);
+
+		daxpy(&remaining, &a, L + k * ldl + k + 1, &one_i, x + (k + 1) * incx, &one_i);
+
+		blas_size n_minus_k = n - k;
+		double beta_scale = beta / beta_prev;
+		dscal(&n_minus_k, &beta_scale, L + ldl * k + k, &one_i);
+
+		double a_beta_scale = a / (beta * beta_prev);
+		daxpy(&remaining, &a_beta_scale, x + (k + 1) * incx, &incx, L + k * ldl + k + 1, &one_i);
+
+		alpha_prev = alpha;
+		beta_prev = beta;
+	}
+}
+
 void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, double* Lo, blas_size ldlo) {
-    int s22_length = n - i - 1;
-    int one = 1;
+    blas_size s22_length = n - i - 1;
+    blas_size one = 1;
 
     double* temp = blas_malloc(16, s22_length * sizeof(double));
     dcopy(&s22_length, L + i * ldl + (i + 1), &one, temp, &one);
@@ -35,8 +64,8 @@ void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, doubl
 }
 
 void cholesky_delete_inplace_d(blas_size n, blas_size i, double* L, blas_size ldl) {
-    int s22_length = n - i - 1;
-    int one = 1;
+    blas_size s22_length = n - i - 1;
+    blas_size one = 1;
 
     double* temp = blas_malloc(16, s22_length * sizeof(double));
 	memcpy(temp, L + i * ldl + (i + 1), s22_length * sizeof(double));
