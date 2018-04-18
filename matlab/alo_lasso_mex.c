@@ -2,8 +2,8 @@
 #include "alocv/alo_lasso.h"
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
-    if(nlhs != 1) {
-        mexErrMsgIdAndTxt("alocv:alo_lasso_mex:nrhs", "Only one output supported.");
+    if(nlhs > 2)  {
+        mexErrMsgIdAndTxt("alocv:alo_lasso_mex:nrhs", "Only one or two output supported.");
     }
 
     double tolerance;
@@ -28,10 +28,21 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mexErrMsgIdAndTxt("alocv:alo_lasso_mex:compatibility", "The regression matrix and fitted values dimension do not match.");
     }
 
+    if(mxGetM(prhs[1]) * mxGetN(prhs[1]) != n) {
+        mexErrMsgIdAndTxt("alocv:alo_lasso_mex:y_compatibility", "The regression matrix and observation vector dimension do not match.");
+    }
+
     mwSize num_tuning = mxGetN(prhs[2]);
 
     plhs[0] = mxCreateDoubleMatrix(num_tuning, 1, mxREAL);
     double* alo = mxGetDoubles(plhs[0]);
 
-    lasso_compute_alo_d(n, p, num_tuning, A, n, B, p, y, 1, tolerance, alo);
+    double* leverage = NULL;
+
+    if (nlhs == 2) {
+        plhs[1] = mxCreateDoubleMatrix(n, num_tuning, mxREAL);
+        leverage = mxGetDoubles(plhs[1]);
+    }
+
+    lasso_compute_alo_d(n, p, num_tuning, A, n, B, p, y, 1, tolerance, alo, leverage);
 }
