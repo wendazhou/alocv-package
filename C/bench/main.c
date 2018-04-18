@@ -38,7 +38,7 @@ inline void* aligned_alloc(size_t alignment, size_t size) {
 #include "time.h"
 
 double get_current_time() {
-    timespec res;
+    struct timespec res;
     clock_gettime(CLOCK_MONOTONIC, &res);
 
     return (double)res.tv_sec + ((double)res.tv_nsec / 1e9);
@@ -90,8 +90,8 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 0; i < m; ++i) {
 		alo_mean += alo_result[i];
-		alo_min = min(alo_min, alo_result[i]);
-		alo_max = max(alo_max, alo_result[i]);
+		alo_min = fmin(alo_min, alo_result[i]);
+		alo_max = fmax(alo_max, alo_result[i]);
 	}
 
 	alo_mean /= m;

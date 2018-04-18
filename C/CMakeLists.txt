@@ -2,24 +2,24 @@ cmake_minimum_required(VERSION 3.5)
 project(alocv)
 
 find_library(mkl_core NAMES mkl_core libmkl_core
-             HINTS ENV ICPP_COMPILER18 LIBRARY_PATH
+             HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
              PATH_SUFFIXES mkl/lib/intel64)
 
 find_library(mkl_tbb_thread NAMES mkl_tbb_thread libmkl_tbb_thread
-             HINTS ENV ICPP_COMPILER18 LIBRARY_PATH
+             HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
              PATH_SUFFIXES mkl/lib/intel64)
 
 find_library(mkl_intel_lp64 NAMES mkl_intel_lp64 libmkl_intel_lp64
-             HINTS ENV ICPP_COMPILER18  LIBRARY_PATH
+             HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
              PATH_SUFFIXES mkl/lib/intel64)
 
 find_library(intel_tbb NAMES tbb
-             HINTS ENV ICPP_COMPILER18 LIBRARY_PATH
+             HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
              PATH_SUFFIXES tbb/lib/intel64/vc14)
 
 find_path(intel_mkl_include NAMES mkl.h
-		  HINTS ENV ICPP_COMPILER18
-		  PATH_SUFFIXES mkl/include)
+          HINTS ENV ICPP_COMPILER18 ENV MKLROOT
+		  PATH_SUFFIXES mkl/include include)
 
 set(MKL_LIBRARIES ${mkl_core} ${mkl_tbb_thread} ${mkl_intel_lp64})
 
