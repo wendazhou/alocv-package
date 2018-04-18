@@ -147,7 +147,7 @@ double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y
     double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
     // temp = y
-    memcpy(temp, y, n * sizeof(double));
+	std::copy(y, y + n, temp);
 
     double one_d = 1.0;
     double min_one_d = -1.0;

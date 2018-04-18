@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 
 	double end = get_current_time();
 
-    printf("Done in %f seconds", end);
+    printf("Done in %f seconds\n", end - start);
 
 	double alo_min = 0.0;
 	double alo_max = INFINITY;
