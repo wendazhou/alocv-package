@@ -206,7 +206,8 @@ def lasso_compute_leverage_cholesky(A, L, index=None, out=None):
 cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
                                double[:] y,
                                double[::view.contiguous, :] B,
-                               double tolerance, double[::1] alo) nogil:
+                               double tolerance,
+                               double[::1] alo, double[::1, :] leverage) nogil:
     cdef int n = A.shape[0]
     cdef int p = A.shape[1]
     cdef int num_tuning = B.shape[1]
@@ -215,12 +216,14 @@ cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
     cdef int incy = y.strides[0] // sizeof(double)
 
     lasso_compute_alo_d(n, p, num_tuning, &A[0, 0], lda, &B[0, 0], ldb,
-                        &y[0], incy, tolerance, &alo[0], NULL)
+                        &y[0], incy, tolerance, &alo[0],
+                        &leverage[0, 0] if leverage.shape[0] > 0 else NULL)
 
 
 @cython.embedsignature(True)
 def lasso_compute_alo(np.ndarray[double, ndim=2] X, double[:] y,
-                      np.ndarray[double, ndim=2] beta_hats, double tolerance=1e-5, out=None):
+                      np.ndarray[double, ndim=2] beta_hats, double tolerance=1e-5,
+                      out=None, return_leverage=False):
     """ Compute the ALO estimate for the LASSO.
 
     Parameters
@@ -240,5 +243,14 @@ def lasso_compute_alo(np.ndarray[double, ndim=2] X, double[:] y,
     if not beta_hats.flags.f_contiguous:
         beta_hats = np.copy(beta_hats, order='F')
 
-    _lasso_compute_alo_d(X, y, beta_hats, tolerance, out)
-    return out
+    if return_leverage:
+        leverage = np.empty((X.shape[0], beta_hats.shape[1]), order='F')
+    else:
+        leverage = np.empty((0, 0), order='F')
+
+    _lasso_compute_alo_d(X, y, beta_hats, tolerance, out, leverage)
+
+    if return_leverage:
+        return out, leverage
+    else:
+        return out

@@ -176,3 +176,16 @@ def test_compute_alo_path_fast(method):
 
     assert np.all(np.isfinite(alo) == np.isfinite(alo_fast))
     assert np.square(alo[np.isfinite(alo)] - alo_fast[np.isfinite(alo_fast)]).mean() < 1e-3
+
+
+def test_compute_alo_leverage():
+    X, y = make_test_case(50, 20, 10)
+
+    alphas, beta_hats, _ = linear_model.lasso_path(X, y)
+
+    alo_fast, leverage = native_impl.lasso_compute_alo(X, y, beta_hats, return_leverage=True)
+
+    assert alo_fast.shape == (beta_hats.shape[1],)
+    assert leverage.shape == (50, beta_hats.shape[1])
+    assert np.all(leverage >= 0)
+    assert np.all(leverage <= 1)

@@ -225,6 +225,13 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         if (num_active == 0) {
             // no active set, reset current path.
             double zero_leverage = 0.0;
+
+			if (!alloc_leverage) {
+				// We are using leverage as an output argument
+				// we are thus required to set the actual leverage values.
+				std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
+			}
+
             alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, &zero_leverage, 0);
             L_active = 0;
             continue;
@@ -252,6 +259,12 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         if (num_active >= n) {
             // special case where the active set is of the same size as the
             // number of observations. The ALO estimate of risk is infinite.
+
+			if (!alloc_leverage) {
+				// if we are outputting leverage values we should fill this too.
+				std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 1.0);
+			}
+
             alo[i] = INFINITY;
             continue;
         }
