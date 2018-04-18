@@ -17,6 +17,9 @@ void cholesky_update_d(blas_size n, double* L, blas_size ldl, double* x, blas_si
     }
 }
 
+/* Computes a rank-1 Cholesky downdate. This function implements the algorithm
+ * described in "A modification to the LINPACK downdating algorithm" DOI:10.1007/BF01933218.
+ */
 void cholesky_downdate_d(blas_size n, double* L, blas_size ldl, double* x, blas_size incx) {
 	blas_size one_i = 1;
 
@@ -93,4 +96,14 @@ void cholesky_append_inplace_d(blas_size n, double* L, blas_size ldl) {
 	dtrsm("R", "L", "C", "N", &one, &n, &one_d, L, &ldl, L + n, &ldl);
     double border_inner = ddot(&n, L + n, &ldl, L + n, &ldl);
 	L[n * ldl + n] = sqrt(L[n * ldl + n] - border_inner);
+}
+
+void cholesky_append_inplace_multiple_d(blas_size n, blas_size k, double* L, blas_size ldl) {
+	// This is currently a naive implementation of this function
+	// which performs a rank-k update by repeatedly performing a rank-1 update.
+	assert(ldl >= n + k);
+
+	for (blas_size m = 0; m < k; ++m) {
+		cholesky_append_inplace_d(n + m, L, ldl);
+	}
 }

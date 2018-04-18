@@ -73,6 +73,26 @@ void cholesky_append_d(blas_size n, double* L, blas_size ldl, double* b, blas_si
  */
 void cholesky_append_inplace_d(blas_size n, double* L, blas_size ldl);
 
+/*! Update the Cholesky representation when adding multiple columns inplace.
+ *
+ * This function computes the update of the Cholesky decomposition L,
+ * when adding multiple new rows at the end of the original matrix.
+ *
+ * This function operates entirely inplace, and assumes that the rows being added to the
+ * matrix are stored as the last rows in L. This function only accesses and modifies the
+ * lower triangular part of L.
+ *
+ * This function should be equivalent to repeatedly calling cholesky_append_inplace_d with increasing
+ * values of n from the specified n to n + k - 1. However, this may be done in a more efficient
+ * fashion in this function.
+ *
+ * @param[in] n The size of the current Cholesky decomposition stored in L.
+ * @param[in] k The number of rows to add to L.
+ * @param[in,out] L The current decompsotion, along with the new rows added to the matrix.
+ * @param[in] ldl The leading dimension of L, must be at least n + k
+ */
+void cholesky_append_inplace_multiple_d(blas_size n, blas_size k, double* L, blas_size ldl);
+
 #ifdef __cplusplus
 }
 #endif

@@ -71,7 +71,6 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 	double one_d = 1.0;
 	double zero_d = 0.0;
 
-
 	// Compute the covariance of the added columns. This places it in the lower
 	// half of the existing decomposition L.
 #ifdef USE_MKL
@@ -83,15 +82,8 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 #endif
 
 	// Append all necessary indices to reach the desired state.
-	for (auto i : index_added) {
-		blas_size one = 1;
-		auto col_l = active_index.size();
-
-		double c = L[col_l * ldl + col_l];
-		cholesky_append_inplace_d(col_l, L, ldl);
-
-		active_index.push_back(i);
-	}
+	cholesky_append_inplace_multiple_d(active_index.size(), index_added.size(), L, ldl);
+	std::copy(index_added.begin(), index_added.end(), std::back_inserter(active_index));
 
     // index_new contains the corresponding set of indices.
     assert(active_index.size() == len_index_new);
