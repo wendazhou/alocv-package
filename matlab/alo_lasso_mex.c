@@ -1,6 +1,13 @@
 #include "mex.h"
 #include "alocv/alo_lasso.h"
 
+#ifdef MATLAB_TYPED_ACCESS
+#define matlab_get_doubles mxGetDoubles
+#else
+#define matlab_get_doubles mxGetPr
+#endif
+
+
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     if(nlhs > 2)  {
         mexErrMsgIdAndTxt("alocv:alo_lasso_mex:nrhs", "Only one or two output supported.");
@@ -18,9 +25,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         mexErrMsgIdAndTxt("alocv:alo_lasso_mex:nlhs", "Must input three or four arguments.");
     }
 
-    double* A = mxGetDoubles(prhs[0]);
-    double* y = mxGetDoubles(prhs[1]);
-    double* B = mxGetDoubles(prhs[2]);
+    double* A = matlab_get_doubles(prhs[0]);
+    double* y = matlab_get_doubles(prhs[1]);
+    double* B = matlab_get_doubles(prhs[2]);
     mwSize n = mxGetM(prhs[0]);
     mwSize p = mxGetN(prhs[0]);
 
@@ -35,13 +42,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
     mwSize num_tuning = mxGetN(prhs[2]);
 
     plhs[0] = mxCreateDoubleMatrix(num_tuning, 1, mxREAL);
-    double* alo = mxGetDoubles(plhs[0]);
+    double* alo = matlab_get_doubles(plhs[0]);
 
     double* leverage = NULL;
 
     if (nlhs == 2) {
         plhs[1] = mxCreateDoubleMatrix(n, num_tuning, mxREAL);
-        leverage = mxGetDoubles(plhs[1]);
+        leverage = matlab_get_doubles(plhs[1]);
     }
 
     lasso_compute_alo_d(n, p, num_tuning, A, n, B, p, y, 1, tolerance, alo, leverage);
