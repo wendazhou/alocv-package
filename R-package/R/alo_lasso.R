@@ -1,7 +1,9 @@
-#' @useDynLib alocv
-#' @importFrom Rcpp sourceCpp
-NULL
-
+#' Computes the approximate leave one out estimator for elastic-net
+#' estimators.
+#'
+#' This function computes the approximate leave-one-out risk and leverage
+#' along a path produced by a call to `glmnet`.
+#'
 #' @export
 alocv.elnet <- function(fit) {
     A <- eval(fit$call[['x']])
