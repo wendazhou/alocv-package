@@ -20,3 +20,15 @@ test_that("compute_h_lasso is equal to naive computation", {
 
     expect_equal(h_fast, h_naive)
 })
+
+test_that("alo_lasso_rcpp is correct for one tuning", {
+    x <- matrix(rnorm(20 * 100), nrow = 100, ncol = 20)
+    beta <- matrix(rnorm(20) * rbinom(20, 1, 0.5), ncol=1)
+    y <- x %*% beta + rnorm(100, sd = 0.1)
+
+    h_naive <- compute_h_lasso_naive(x, y, beta)
+    result_rcpp <- alo_lasso_rcpp(x, beta, y)
+
+    expect_equal(h_naive, result_rcpp[['leverage']])
+})
+

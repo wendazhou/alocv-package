@@ -1,3 +1,7 @@
+#' @useDynLib alocv
+#' @importFrom Rcpp sourceCpp
+NULL
+
 compute_h_lasso_path <- function(x, y, beta_hats) {
 }
 
