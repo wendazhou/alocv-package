@@ -1,0 +1,7 @@
+CXX_STD=CXX11
+PKG_CPPFLAGS+=-I./include -DUSE_R
+PKG_CFLAGS+=-I./include -DUSE_R
+PKG_LIBS+=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+SOURCES = alocv/cholesky_utils.c alocv/alo_lasso.cpp
+OBJECTS = alocv/cholesky_utils.o alocv/alo_lasso.o
