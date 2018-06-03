@@ -5,7 +5,3 @@ alo_lasso_rcpp <- function(A, B, y) {
     .Call('_alocv_alo_lasso_rcpp', PACKAGE = 'alocv', A, B, y)
 }
 
-timesTwo <- function(x) {
-    .Call('_alocv_timesTwo', PACKAGE = 'alocv', x)
-}
-

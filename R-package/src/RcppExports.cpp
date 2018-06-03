@@ -18,21 +18,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// timesTwo
-int timesTwo(int x);
-RcppExport SEXP _alocv_timesTwo(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(timesTwo(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_alocv_alo_lasso_rcpp", (DL_FUNC) &_alocv_alo_lasso_rcpp, 3},
-    {"_alocv_timesTwo", (DL_FUNC) &_alocv_timesTwo, 1},
     {NULL, NULL, 0}
 };
 
