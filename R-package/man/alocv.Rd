@@ -7,7 +7,7 @@
 \alias{alocv}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
 \usage{
-alocv(fit)
+alocv(fit, ...)
 }
 \arguments{
 \item{fit}{An object containing the fitted estimator.}

@@ -1,5 +1,6 @@
 context("ALO Lasso")
 library(alocv)
+library(glmnet)
 
 compute_h_lasso_naive <- function(x, y, beta_hat, tol = 1e-5) {
     E <- abs(beta_hat) > tol
@@ -32,3 +33,12 @@ test_that("alo_lasso_rcpp is correct for one tuning", {
     expect_equal(h_naive, result_rcpp[['leverage']])
 })
 
+
+test_that("alocv_can_apply_to_glmnet", {
+    x <- matrix(rnorm(20 * 100), nrow = 100, ncol = 20)
+    beta <- matrix(rnorm(20) * rbinom(20, 1, 0.5), ncol=1)
+    y <- x %*% beta + rnorm(100, sd = 0.1)
+
+    fitted <- glmnet(x, y)
+    alocv(fitted)
+})

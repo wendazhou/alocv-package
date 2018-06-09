@@ -5,10 +5,26 @@
 #' along a path produced by a call to `glmnet`.
 #'
 #' @export
-alocv.elnet <- function(fit) {
-    A <- eval(fit$call[['x']])
-    y <- eval(fit$call[['y']])
+alocv.elnet <- function(fit, ...) {
+    args <- list(...)
+
+    if ('x' %in% names(args)) {
+        A <- args[['x']]
+    } else {
+        A <- eval(fit$call[['x']])
+    }
+
+    if ('y' %in% names(args)) {
+        y <- args[['y']]
+    } else {
+        y <- eval(fit$call[['y']])
+    }
+
     B <- as.matrix(fit$beta)
 
-    alo_lasso_rcpp(A, B, y)
+    result <- alo_lasso_rcpp(A, B, y)
+    result[['original_fit']] <- fit
+    result[['lambda']] <- fit[['lambda']]
+    class(result) <- c('alo', 'alo.elnet')
+    result
 }

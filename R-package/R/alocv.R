@@ -14,6 +14,6 @@ NULL
 #' @param fit An object containing the fitted estimator.
 #'
 #' @export
-alocv <- function(fit) {
+alocv <- function(fit, ...) {
     UseMethod('alocv', fit)
 }

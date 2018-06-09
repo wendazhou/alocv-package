@@ -5,7 +5,7 @@
 \title{Computes the approximate leave one out estimator for elastic-net
 estimators.}
 \usage{
-\method{alocv}{elnet}(fit)
+\method{alocv}{elnet}(fit, ...)
 }
 \description{
 This function computes the approximate leave-one-out risk and leverage
