@@ -11,10 +11,10 @@
 
 
 void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
-							   double* L, blas_size ldl,
-							   double* W, blas_size ldw, 
-							   blas_size len_index, blas_size* index,
-							   blas_size len_index_new, blas_size* index_new) {
+                               double* L, blas_size ldl,
+                               double* W, blas_size ldw, 
+                               blas_size len_index, blas_size* index,
+                               blas_size len_index_new, blas_size* index_new) {
     // First compute the columns to add and remove from the matrix to update it.
     std::vector<blas_size> start_index(index, index + len_index);
     std::vector<blas_size> end_index(index_new, index_new + len_index_new);
@@ -42,48 +42,48 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
         auto it = std::find(active_index.begin(), active_index.end(), i);
         auto loc = std::distance(active_index.begin(), it);
 
-		cholesky_delete_inplace_d(active_index.size(), loc, L, ldl);
+        cholesky_delete_inplace_d(active_index.size(), loc, L, ldl);
         active_index.erase(it);
     }
-	
-	{
-		std::size_t col_w = 0;
+    
+    {
+        std::size_t col_w = 0;
 
-		// Once we have deleted required columns, we are only appending to the
-		// end. This is a good time to construct the W matrix.
-		// First add all the existing indices.
-		for (auto col_a: active_index) {
-			std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
-			col_w += 1;
-		}
+        // Once we have deleted required columns, we are only appending to the
+        // end. This is a good time to construct the W matrix.
+        // First add all the existing indices.
+        for (auto col_a: active_index) {
+            std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+            col_w += 1;
+        }
 
-		// Add the new indices.
-		for (auto col_a : index_added) {
-			std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
-			col_w += 1;
-		}
-	}
+        // Add the new indices.
+        for (auto col_a : index_added) {
+            std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+            col_w += 1;
+        }
+    }
 
-	// Precompute the border of the matrix we are appending.
-	blas_size num_existing = active_index.size();
-	blas_size num_added = index_added.size();
-	blas_size num_total = num_existing + num_added;
-	double one_d = 1.0;
-	double zero_d = 0.0;
+    // Precompute the border of the matrix we are appending.
+    blas_size num_existing = active_index.size();
+    blas_size num_added = index_added.size();
+    blas_size num_total = num_existing + num_added;
+    double one_d = 1.0;
+    double zero_d = 0.0;
 
-	// Compute the covariance of the added columns. This places it in the lower
-	// half of the existing decomposition L.
+    // Compute the covariance of the added columns. This places it in the lower
+    // half of the existing decomposition L.
 #ifdef USE_MKL
-	dgemm("T", "N", &num_added, &num_existing, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
-	dgemmt("L", "T", "N", &num_added, &n, &one_d, W + num_existing * ldw, &ldw, W + num_existing * ldw, &ldw,
-		&zero_d, L + num_existing * ldl + num_existing, &ldl);
+    dgemm("T", "N", &num_added, &num_existing, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
+    dgemmt("L", "T", "N", &num_added, &n, &one_d, W + num_existing * ldw, &ldw, W + num_existing * ldw, &ldw,
+        &zero_d, L + num_existing * ldl + num_existing, &ldl);
 #else
-	dgemm("T", "N", &num_added, &num_total, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
+    dgemm("T", "N", &num_added, &num_total, &n, &one_d, W + num_existing * ldw, &ldw, W, &ldw, &zero_d, L + num_existing, &ldl);
 #endif
 
-	// Append all necessary indices to reach the desired state.
-	cholesky_append_inplace_multiple_d(active_index.size(), index_added.size(), L, ldl);
-	std::copy(index_added.begin(), index_added.end(), std::back_inserter(active_index));
+    // Append all necessary indices to reach the desired state.
+    cholesky_append_inplace_multiple_d(active_index.size(), index_added.size(), L, ldl);
+    std::copy(index_added.begin(), index_added.end(), std::back_inserter(active_index));
 
     // index_new contains the corresponding set of indices.
     assert(active_index.size() == len_index_new);
@@ -139,7 +139,7 @@ double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y
     double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
     // temp = y
-	std::copy(y, y + n, temp);
+    std::copy(y, y + n, temp);
 
     double one_d = 1.0;
     double min_one_d = -1.0;
@@ -185,14 +185,14 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
     // at the end of the representation.
 
     for(int i = 0; i < current_index.size(); ++i) {
-		std::copy(A + current_index[i] * lda, A + current_index[i] * lda + n, W + i * ldw);
+        std::copy(A + current_index[i] * lda, A + current_index[i] * lda + n, W + i * ldw);
     }
 }
 
 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
                          double* B, blas_size ldb, double* y, blas_size incy, double tolerance,
-						 double* alo, double* leverage) {
+                         double* alo, double* leverage) {
     // Allocate necessary structures
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
 
@@ -205,17 +205,17 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
 
     std::vector<blas_size> active_index;
 
-	blas_size ld_leverage;
-	bool alloc_leverage;
-	if (leverage) {
-		alloc_leverage = false;
-		ld_leverage = n;
-	}
-	else {
-		alloc_leverage = true;
-		leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
-		ld_leverage = 0;
-	}
+    blas_size ld_leverage;
+    bool alloc_leverage;
+    if (leverage) {
+        alloc_leverage = false;
+        ld_leverage = n;
+    }
+    else {
+        alloc_leverage = true;
+        leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+        ld_leverage = 0;
+    }
 
     for(blas_size i = 0; i < m; ++i) {
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
@@ -226,11 +226,11 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             // no active set, reset current path.
             double zero_leverage = 0.0;
 
-			if (!alloc_leverage) {
-				// We are using leverage as an output argument
-				// we are thus required to set the actual leverage values.
-				std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
-			}
+            if (!alloc_leverage) {
+                // We are using leverage as an output argument
+                // we are thus required to set the actual leverage values.
+                std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
+            }
 
             alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, &zero_leverage, 0);
             L_active = 0;
@@ -240,8 +240,8 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         // First, we need to make sure our Cholesky decomposition is up to date.
         if (L_active > 0) {
             // update our cholesky decomposition
-			lasso_update_cholesky_w_d(n, A, lda, L, ldl, W, ldw,
-				active_index.size(), active_index.data(), current_index.size(), current_index.data());
+            lasso_update_cholesky_w_d(n, A, lda, L, ldl, W, ldw,
+                active_index.size(), active_index.data(), current_index.size(), current_index.data());
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.
@@ -260,10 +260,10 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             // special case where the active set is of the same size as the
             // number of observations. The ALO estimate of risk is infinite.
 
-			if (!alloc_leverage) {
-				// if we are outputting leverage values we should fill this too.
-				std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 1.0);
-			}
+            if (!alloc_leverage) {
+                // if we are outputting leverage values we should fill this too.
+                std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 1.0);
+            }
 
             alo[i] = INFINITY;
             continue;
@@ -278,7 +278,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
     // free all the buffers
     blas_free(L);
 
-	if (alloc_leverage) {
-		blas_free(leverage);
-	}
+    if (alloc_leverage) {
+        blas_free(leverage);
+    }
 }
