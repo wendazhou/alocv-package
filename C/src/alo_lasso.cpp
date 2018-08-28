@@ -1,4 +1,5 @@
 #include "alocv/alo_lasso.h"
+#include "lasso_utils.h"
 #include "alocv/cholesky_utils.h"
 #include "blas_configuration.h"
 
@@ -102,7 +103,7 @@ void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas
  *  @param[in] beta A pointer to the coefficients.
  *  @param[in] tolerance The tolerance to determine which values are 0.
  */
-std::vector<blas_size> find_active_set(blas_size p, double* beta, double tolerance) {
+std::vector<blas_size> find_active_set(blas_size p, const double* beta, double tolerance) {
     std::vector<blas_size> result;
 
     for(blas_size i = 0; i < p; ++i) {
@@ -117,7 +118,7 @@ std::vector<blas_size> find_active_set(blas_size p, double* beta, double toleran
 
 /*! Finds the largest active set in the given set of solutions.
  */
-blas_size max_active_set_size(blas_size num_tuning, blas_size p, double* B, blas_size ldb, double tolerance) {
+blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B, blas_size ldb, double tolerance) {
     blas_size max_size = 0;
 
     for(blas_size i = 0; i < num_tuning; ++ i) {
@@ -129,8 +130,8 @@ blas_size max_active_set_size(blas_size num_tuning, blas_size p, double* B, blas
 }
 
 
-double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y,
-                   double* beta, double* leverage, blas_size incl) {
+double compute_alo(blas_size n, blas_size p, const double* A, blas_size lda,
+                   const double* y, const double* beta, const double* leverage) {
     double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
     // temp = y
@@ -146,7 +147,7 @@ double compute_alo(blas_size n, blas_size p, double* A, blas_size lda, double* y
     double acc = 0;
 
     for(blas_size i = 0; i < n; ++i) {
-        double res = temp[i] / (1 - leverage[incl * i]);
+        double res = temp[i] / (1 - leverage[i]);
         acc += res * res;
     }
 
@@ -221,13 +222,9 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             // no active set, reset current path.
             double zero_leverage = 0.0;
 
-            if (!alloc_leverage) {
-                // We are using leverage as an output argument
-                // we are thus required to set the actual leverage values.
-                std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
-            }
-
-            alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, &zero_leverage, 0);
+            // fill the leverage to 0
+            std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
+            alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i);
             L_active = 0;
             continue;
         }
@@ -267,7 +264,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         // compute the leverage value.
         lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage + ld_leverage * i);
         // compute the current ALO vlue.
-        alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i, 1);
+        alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i);
     }
 
     // free all the buffers

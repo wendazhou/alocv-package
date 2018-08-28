@@ -30,7 +30,7 @@ message(STATUS "Found MKL headers: ${intel_mkl_include}")
 
 add_library(alocv STATIC src/cholesky_utils.c
                          src/alo_lasso.cpp
-						 src/alo_slope.cpp)
+                         src/alo_enet.cpp)
 target_compile_definitions(alocv PUBLIC USE_MKL)
 target_include_directories(alocv PUBLIC include)
 target_include_directories(alocv PRIVATE src "${intel_mkl_include}")
