@@ -64,6 +64,7 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
     }
 }
 
+#ifndef USE_R // R does not have RFP BLAS/LAPACK operations
 /** Compute the ALO leverage for the elastic net.
  * 
  * This function uses rectangular packed format for temporary storage.
@@ -120,6 +121,7 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
         blas_free(L);
     }
 }
+#endif
 
 void copy_active_set(blas_size n, blas_size p, const double* A, blas_size lda, double* XE,
                      const std::vector<blas_size>& active_set) {
@@ -149,7 +151,16 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
                         bool has_intercept,
                         double tolerance, double* alo, double* leverage) {
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
-    double* L = (double*)blas_malloc(16, max_active * (max_active + 1) * sizeof(double) / 2);
+
+#ifdef USE_R
+    const std::size_t l_size = max_active * max_active;
+#define alo_elastic_net_impl alo_elastic_net
+#else
+    const std::size_t l_size = max_active * (max_active + 1) / 2;
+#define alo_elastic_net_impl alo_elastic_net_rfp
+#endif
+
+    double* L = (double*)blas_malloc(16, l_size * sizeof(double));
     double* XE = (double*)blas_malloc(16, max_active * n * sizeof(double));
 
     blas_size ld_leverage;
@@ -170,7 +181,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
         copy_active_set(n, p, A, lda, XE, current_index);
 
-        alo_elastic_net_rfp(
+        alo_elastic_net_impl(
             n, p, XE, n, sy, lambda[i], alpha, has_intercept,
             leverage + i * ld_leverage, L);
         

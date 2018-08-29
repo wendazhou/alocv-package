@@ -28,6 +28,9 @@
 #define ddot F77_CALL(ddot)
 #define dgemv F77_CALL(dgemv)
 #define dpotrf F77_CALL(dpotrf)
+#define dsyrk F77_CALL(dsyrk)
+
+#define WENDA_RFP_ENABLE_SHIMS
 
 #else
 #include "blas.h"
@@ -78,6 +81,11 @@ inline void blas_free(void* ptr) {
 }
 #endif // _WIN32 || _WIN64
 
+#endif // platform specific allocation
+
+#ifdef WENDA_RFP_ENABLE_SHIMS
+// If the platform requires RFP shims, we also include the file for compatibility.
+#include "rfp_shims.h"
 #endif
 
-#endif
+#endif // WENDA_BLAS_CONFIGURATION_H_INCLUDED

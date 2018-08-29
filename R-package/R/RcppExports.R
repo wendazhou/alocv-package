@@ -5,3 +5,7 @@ alo_lasso_rcpp <- function(A, B, y) {
     .Call('_alocv_alo_lasso_rcpp', PACKAGE = 'alocv', A, B, y)
 }
 
+alo_enet_rcpp <- function(A, B, y, lambda, alpha, has_intercept) {
+    .Call('_alocv_alo_enet_rcpp', PACKAGE = 'alocv', A, B, y, lambda, alpha, has_intercept)
+}
+

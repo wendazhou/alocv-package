@@ -3,5 +3,5 @@ PKG_CPPFLAGS+=-I./include -DUSE_R
 PKG_CFLAGS+=-I./include -DUSE_R
 PKG_LIBS+=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-SOURCES = alocv/cholesky_utils.c alocv/alo_lasso.cpp
-OBJECTS = alocv/cholesky_utils.o alocv/alo_lasso.o RcppExports.o alo_lasso_wrapper.o
+SOURCES = alocv/cholesky_utils.c alocv/alo_lasso.cpp alocv/alo_enet.cpp
+OBJECTS = alocv/cholesky_utils.o alocv/alo_lasso.o alocv/alo_enet.o RcppExports.o alo_lasso_wrapper.o

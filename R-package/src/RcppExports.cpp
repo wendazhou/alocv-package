@@ -18,9 +18,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// alo_enet_rcpp
+List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, NumericVector lambda, double alpha, bool has_intercept);
+RcppExport SEXP _alocv_alo_enet_rcpp(SEXP ASEXP, SEXP BSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP has_interceptSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type B(BSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< bool >::type has_intercept(has_interceptSEXP);
+    rcpp_result_gen = Rcpp::wrap(alo_enet_rcpp(A, B, y, lambda, alpha, has_intercept));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_alocv_alo_lasso_rcpp", (DL_FUNC) &_alocv_alo_lasso_rcpp, 3},
+    {"_alocv_alo_enet_rcpp", (DL_FUNC) &_alocv_alo_enet_rcpp, 6},
     {NULL, NULL, 0}
 };
 

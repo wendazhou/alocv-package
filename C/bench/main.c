@@ -29,7 +29,7 @@ double get_current_time() {
 }
 
 inline void* aligned_alloc(size_t alignment, size_t size) {
-	return _aligned_malloc(size, alignment);
+    return _aligned_malloc(size, alignment);
 }
 
 #define aligned_free _aligned_free
@@ -49,54 +49,54 @@ double get_current_time() {
 #endif
 
 int main(int argc, char* argv[]) {
-	if (argc != 2) {
-		printf("Please pass in input file.\n");
-		return 0;
-	}
+    if (argc != 2) {
+        printf("Please pass in input file.\n");
+        return 0;
+    }
 
-	int32_t n, p, m;
+    int32_t n, p, m;
 
-	FILE* file = fopen(argv[1], "rb");
+    FILE* file = fopen(argv[1], "rb");
 
-	fread(&n, sizeof(n), 1, file);
-	fread(&p, sizeof(p), 1, file);
-	fread(&m, sizeof(m), 1, file);
+    fread(&n, sizeof(n), 1, file);
+    fread(&p, sizeof(p), 1, file);
+    fread(&m, sizeof(m), 1, file);
 
-	double* A = aligned_alloc(16, n * p * sizeof(double));
-	double* B = aligned_alloc(16, p * m * sizeof(double));
-	double* y = aligned_alloc(16, n * sizeof(double));
+    double* A = aligned_alloc(16, n * p * sizeof(double));
+    double* B = aligned_alloc(16, p * m * sizeof(double));
+    double* y = aligned_alloc(16, n * sizeof(double));
 
-	double* alo_result = aligned_alloc(16, m * sizeof(double));
+    double* alo_result = aligned_alloc(16, m * sizeof(double));
 
-	printf("Reading data: n=%d, p=%d, m=%d\n", n, p, m);
+    printf("Reading data: n=%d, p=%d, m=%d\n", n, p, m);
 
-	fread(A, sizeof(double), n * p, file);
-	fread(B, sizeof(double), p * m, file);
-	fread(y, sizeof(double), n, file);
+    fread(A, sizeof(double), n * p, file);
+    fread(B, sizeof(double), p * m, file);
+    fread(y, sizeof(double), n, file);
 
-	printf("Loaded data. Performing initial run.\n");
+    printf("Loaded data. Performing initial run.\n");
 
-	double start = get_current_time();
+    double start = get_current_time();
 
-	lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
+    lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
 
-	double end = get_current_time();
+    double end = get_current_time();
 
     printf("Done in %f seconds\n", end - start);
 
-	double alo_min = 0.0;
-	double alo_max = INFINITY;
-	double alo_mean = 0.0;
+    double alo_min = 0.0;
+    double alo_max = INFINITY;
+    double alo_mean = 0.0;
 
-	for (int i = 0; i < m; ++i) {
-		alo_mean += alo_result[i];
-		alo_min = fmin(alo_min, alo_result[i]);
-		alo_max = fmax(alo_max, alo_result[i]);
-	}
+    for (int i = 0; i < m; ++i) {
+        alo_mean += alo_result[i];
+        alo_min = fmin(alo_min, alo_result[i]);
+        alo_max = fmax(alo_max, alo_result[i]);
+    }
 
-	alo_mean /= m;
+    alo_mean /= m;
 
-	printf("Stastistics for computed ALO: min=%g; mean=%g; max=%g", alo_min, alo_mean, alo_max);
+    printf("Stastistics for computed ALO: min=%g; mean=%g; max=%g", alo_min, alo_mean, alo_max);
 
     aligned_free(alo_result);
     aligned_free(y);
