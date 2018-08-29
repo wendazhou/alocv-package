@@ -11,7 +11,6 @@
  * @param p The number of active parameters
  * @param[in, out] XE A n x p matrix containing the active set
  * @param lde The leading dimension of E
- * @param sy The standard deviation of y times n
  * @param lambda The value of the regularizer lambda
  * @param alpha The value of the elastic net parameter alpha
  * @param has_intercept Whether an intercept was fit to the data
@@ -20,7 +19,7 @@
  * 
  */
 void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
-                     double sy, double lambda, double alpha, bool has_intercept,
+                     double lambda, double alpha, bool has_intercept,
                      double* h, double* L) {
     bool alloc_l = false;
 
@@ -28,13 +27,12 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
         L = (double*)blas_malloc(16, sizeof(double) * p * p);
     }
 
-    double inv_sy = 1 / sy;
     double zero = 0;
     double one = 1;
-    dsyrk("L", "T", &n, &p, &inv_sy, XE, &lde, &zero, L, &p);
+    dsyrk("L", "T", &p, &n, &one, XE, &lde, &zero, L, &p);
 
     if (alpha != 1) {
-        double offset = (1 - alpha) * lambda * inv_sy * inv_sy;
+        double offset = (1 - alpha) * lambda;
 
         for(blas_size i = 0; i < p; ++i) {
             L[i + p * i] += offset;
@@ -50,13 +48,7 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
     dtrsm("R", "L", "T", "N", &n, &p, &one, L, &p, XE, &lde);
 
     for(blas_size i = 0; i < n; ++i) {
-        double acc = 0;
-
-        for(blas_size j = 0; j < n; ++j) {
-            acc += XE[i * lde + j] * XE[i * lde + j];
-        }
-
-        h[i] = acc;
+        h[i] = ddot(&p, XE + i, &n, XE + i, &n);
     }
 
     if (alloc_l) {
@@ -72,7 +64,7 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
  * @param L If provided, a temporary array of size at least p * (p + 1) / 2 to store inner products.
  */
 void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
-                         double sy, double lambda, double alpha, bool has_intercept,
+                         double lambda, double alpha, bool has_intercept,
                          double* h, double* L) {
     bool alloc_l = false;
 
@@ -82,14 +74,13 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
 
     int ldl = p + (p % 2 == 0 ? 1 : 0);
 
-    double inv_sy = 1 / sy;
     double zero = 0;
     double one = 1;
 
-    dsfrk("N", "L", "T", &p, &n, &inv_sy, XE, &lde, &zero, L);
+    dsfrk("N", "L", "T", &p, &n, &one, XE, &lde, &zero, L);
 
     if (alpha != 1) {
-        double offset = (1 - alpha) * lambda * inv_sy * inv_sy;
+        double offset = (1 - alpha) * lambda;
 
         L[0] += offset;
 
@@ -169,15 +160,18 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
         ld_leverage = 0;
     }
 
-    double sy = n * stddev(y, n);
-
     for(blas_size i = 0; i < m; ++i) {
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
-        copy_active_set(n, p, A, lda, XE, current_index);
 
-        alo_elastic_net_impl(
-            n, current_index.size(), XE, n, sy, lambda[i], alpha, has_intercept,
-            leverage + i * ld_leverage, L);
+        if(current_index.empty()) {
+            // no selected variables
+            std::fill(leverage + i * ld_leverage, leverage + i * ld_leverage + n, 0.0);
+        } else {
+            copy_active_set(n, p, A, lda, XE, current_index);
+            alo_elastic_net_impl(
+                n, current_index.size(), XE, n, lambda[i], alpha, has_intercept,
+                leverage + i * ld_leverage, L);
+        }
         
         alo[i] = compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);
     }
