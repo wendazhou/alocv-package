@@ -1,3 +1,4 @@
+#include "alocv/alo_enet.h"
 #include "blas_configuration.h"
 #include "lasso_utils.h"
 #include <algorithm>
@@ -128,7 +129,7 @@ void copy_active_set(blas_size n, blas_size p, const double* A, blas_size lda, d
     }
 }
 
-double stddev(double* data, blas_size n) {
+double stddev(const double* data, blas_size n) {
     double acc = 0;
     double acc2 = 0;
 
@@ -143,8 +144,8 @@ double stddev(double* data, blas_size n) {
     return sqrt(acc2);
 }
 
-void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
-                        double* B, blas_size ldb, double* y, double* lambda, double alpha,
+void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
+                        const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
                         bool has_intercept,
                         double tolerance, double* alo, double* leverage) {
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
@@ -175,4 +176,11 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_s
         
         compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);
     }
+
+    if(alloc_leverage) {
+        blas_free(leverage);
+    }
+
+    blas_free(L);
+    blas_free(XE);
 }
