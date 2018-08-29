@@ -2,8 +2,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
+#include "string.h"
 
 #include "alocv/alo_lasso.h"
+#include "alocv/alo_enet.h"
 
 #ifdef _WIN32
 
@@ -49,14 +51,27 @@ double get_current_time() {
 #endif
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         printf("Please pass in input file.\n");
         return 0;
     }
 
+    int method;
+
+    if(!strcmp("lasso", argv[1])) {
+        method = 0;
+    }
+    else if (!strcmp("enet", argv[1])) {
+        method = 1;
+    }
+    else {
+        printf("Unknow method specified: %s", argv[1]);
+        return 1;
+    }
+
     int32_t n, p, m;
 
-    FILE* file = fopen(argv[1], "rb");
+    FILE* file = fopen(argv[2], "rb");
 
     fread(&n, sizeof(n), 1, file);
     fread(&p, sizeof(p), 1, file);
@@ -65,6 +80,7 @@ int main(int argc, char* argv[]) {
     double* A = aligned_alloc(16, n * p * sizeof(double));
     double* B = aligned_alloc(16, p * m * sizeof(double));
     double* y = aligned_alloc(16, n * sizeof(double));
+    double* lambda = aligned_alloc(16, m * sizeof(double));
 
     double* alo_result = aligned_alloc(16, m * sizeof(double));
 
@@ -73,12 +89,25 @@ int main(int argc, char* argv[]) {
     fread(A, sizeof(double), n * p, file);
     fread(B, sizeof(double), p * m, file);
     fread(y, sizeof(double), n, file);
+    fread(lambda, sizeof(double), m, file);
 
     printf("Loaded data. Performing initial run.\n");
 
     double start = get_current_time();
 
-    lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
+    switch(method) {
+    case 0:
+        printf("Computing ALO for method: LASSO\n");
+        lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
+        break;
+    case 1:
+        printf("Computing ALO for method: Elastic-Net\n");
+        enet_compute_alo_d(n, p, m, A, n, B, p, y, lambda, 0.9, 0, 1e-5, alo_result, NULL);
+        break;
+    default:
+        printf("Unknown method");
+        return 1;
+    }
 
     double end = get_current_time();
 

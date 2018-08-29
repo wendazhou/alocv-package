@@ -108,13 +108,7 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
     dtfsm("N", "R", "L", "T", "N", &n, &p, &one, L, XE, &lde);
 
     for(blas_size i = 0; i < n; ++i) {
-        double acc = 0;
-
-        for(blas_size j = 0; j < n; ++j) {
-            acc += XE[i * lde + j] * XE[i * lde + j];
-        }
-
-        h[i] = acc;
+        h[i] = ddot(&p, XE + i, &n, XE + i, &n);
     }
 
     if (alloc_l) {
@@ -148,7 +142,7 @@ double stddev(const double* data, blas_size n) {
 
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
-                        bool has_intercept,
+                        int has_intercept,
                         double tolerance, double* alo, double* leverage) {
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
 
@@ -182,10 +176,10 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
         copy_active_set(n, p, A, lda, XE, current_index);
 
         alo_elastic_net_impl(
-            n, p, XE, n, sy, lambda[i], alpha, has_intercept,
+            n, current_index.size(), XE, n, sy, lambda[i], alpha, has_intercept,
             leverage + i * ld_leverage, L);
         
-        compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);
+        alo[i] = compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);
     }
 
     if(alloc_leverage) {

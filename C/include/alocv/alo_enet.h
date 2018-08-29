@@ -26,8 +26,8 @@ extern "C" {
  */
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
-                        bool has_intercept, double tolerance,
-                        double* alo, double* leverage = 0);
+                        int has_intercept, double tolerance,
+                        double* alo, double* leverage);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -162,11 +162,7 @@ void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double
     double zero_d = 0.0;
     blas_size info;
 
-#ifdef USE_MKL
-    dgemmt("L", "T", "N", &k, &n, &one_d, W, &ldw, W, &ldw, &zero_d, L, &ldl);
-#else
-    dgemm("T", "N", &k, &k, &n, &one_d, W, &ldw, W, &ldw, &zero_d, L, &ldl);
-#endif
+    dsyrk("L", "T", &k, &n, &one_d, W, &ldw, &zero_d, L, &ldl);
     dpotrf("L", &k, L, &ldl, &info);
 }
 
