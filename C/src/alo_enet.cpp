@@ -8,12 +8,22 @@
 
 namespace {
 
+enum class SymmetricFormat {
+    Full,
+    RFP
+};
+
 /*! Computes the Gram matrix of the given dataset in RFP format.
  * 
  */
-void compute_gram_rfp(blas_size n, blas_size p, const double* XE, blas_size lde, double* L) {
+void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, double* L, SymmetricFormat format) {
     const double one = 1;
     const double zero = 0;
+
+    if(format == SymmetricFormat::Full) {
+        dsyrk("L", "T", &p, &n, &one, XE, &lde, &zero, L, &p);
+        return;
+    }
 
 #ifndef ALOCV_LAPACK_NO_RFP
     dsfrk("N", "L", "T", &p, &n, &one, XE, &lde, &zero, L);
@@ -28,10 +38,14 @@ void compute_gram_rfp(blas_size n, blas_size p, const double* XE, blas_size lde,
 #endif
 }
 
-
 /*! Computes the Cholesky decomposition of the matrix in RFP format. */
-int compute_cholesky_rfp(blas_size p, double* L) {
+int compute_cholesky(blas_size p, double* L, SymmetricFormat format) {
     int info;
+
+    if(format == SymmetricFormat::Full) {
+        dpotrf("L", &p, L, &p, &info);
+        return info;
+    }
 
 #ifndef ALOCV_LAPACK_NO_RFP
     dpftrf("N", "L", &p, L, &info);
@@ -60,8 +74,13 @@ int compute_cholesky_rfp(blas_size p, double* L) {
     return info;
 }
 
-int solve_triangular_rfp(blas_size n, blas_size p, const double* L, double* XE, blas_size lde) {
+void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, blas_size lde, SymmetricFormat format) {
     const double one = 1;
+
+    if(format == SymmetricFormat::Full) {
+        dtrsm("R", "L", "T", "N", &n, &p, &one, L, &p, XE, &lde);
+        return;
+    }
 
 #ifndef ALOCV_LAPACK_NO_RFP
     dtfsm("N", "R", "L", "T", "N", &n, &p, &one, L, XE, &lde);
@@ -80,8 +99,31 @@ int solve_triangular_rfp(blas_size n, blas_size p, const double* L, double* XE, 
 #endif
 }
 
+void offset_diagonal(blas_size p, double* L, double value, SymmetricFormat format) {
+    if(format == SymmetricFormat::Full) {
+        for(int i = 0; i < p; ++i) {
+            L[i * p + i] += value;
+        }
+
+        return;
+    } else {
+        L[0] += value;
+
+        for(blas_size i = 1; i < (p + 1) / 2; ++i) {
+            L[i + p * i] += value;
+            L[i + p * i - 1] += value;
+        }
+    }
 }
 
+blas_size sym_num_elements(blas_size p, SymmetricFormat format) {
+    if(format == SymmetricFormat::Full) {
+        return p * p;
+    }
+    else {
+        return p * (p + 1) / 2;
+    }
+}
 
 /** Compute the ALO leverage for the elastic net.
  * 
@@ -94,27 +136,28 @@ int solve_triangular_rfp(blas_size n, blas_size p, const double* L, double* XE, 
  * @param has_intercept Whether an intercept was fit to the data
  * @param[out] h A vector of length n containing the leverage value for each observation.
  * @param[out] L If provided, a temporary array of size at least p * p to store the inner products.
+ * @param format The format to use for storing 
  * 
  */
-void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
-                     double lambda, double alpha, bool has_intercept,
-                     double* h, double* L) {
+void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
+                         double lambda, double alpha, bool has_intercept,
+                         double* h, double* L, SymmetricFormat format) {
     bool alloc_l = false;
 
     if (!L) {
-        L = (double*)blas_malloc(16, sizeof(double) * p * p);
+        L = (double*)blas_malloc(16, sizeof(double) * sym_num_elements(p, format));
     }
+
+    int ldl = p + (p % 2 == 0 ? 1 : 0);
 
     double zero = 0;
     double one = 1;
-    dsyrk("L", "T", &p, &n, &one, XE, &lde, &zero, L, &p);
+
+    compute_gram(n, p, XE, lde, L, format);
 
     if (alpha != 1) {
         double offset = (1 - alpha) * lambda;
-
-        for(blas_size i = 0; i < p; ++i) {
-            L[i + p * i] += offset;
-        }
+        offset_diagonal(p, L, offset, format);
     }
 
     if (has_intercept) {
@@ -122,8 +165,8 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
     }
 
     int info;
-    dpotrf("L", &p, L, &p, &info);
-    dtrsm("R", "L", "T", "N", &n, &p, &one, L, &p, XE, &lde);
+    compute_cholesky(p, L, format);
+    solve_triangular(n, p, L, XE, lde, format);
 
     for(blas_size i = 0; i < n; ++i) {
         h[i] = ddot(&p, XE + i, &n, XE + i, &n);
@@ -134,54 +177,6 @@ void alo_elastic_net(blas_size n, blas_size p, double* XE, blas_size lde,
     }
 }
 
-/** Compute the ALO leverage for the elastic net.
- * 
- * This function uses rectangular packed format for temporary storage.
- * 
- * @param L If provided, a temporary array of size at least p * (p + 1) / 2 to store inner products.
- */
-void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
-                         double lambda, double alpha, bool has_intercept,
-                         double* h, double* L) {
-    bool alloc_l = false;
-
-    if (!L) {
-        L = (double*)blas_malloc(16, sizeof(double) * p * (p + 1) / 2);
-    }
-
-    int ldl = p + (p % 2 == 0 ? 1 : 0);
-
-    double zero = 0;
-    double one = 1;
-
-    compute_gram_rfp(n, p, XE, lde, L);
-
-    if (alpha != 1) {
-        double offset = (1 - alpha) * lambda;
-
-        L[0] += offset;
-
-        for(blas_size i = 1; i < (p + 1) / 2; ++i) {
-            L[i + ldl * i] += offset;
-            L[i + ldl * i - 1] += offset;
-        }
-    }
-
-    if (has_intercept) {
-        L[0] = 0;
-    }
-
-    int info;
-    compute_cholesky_rfp(p, L);
-    solve_triangular_rfp(n, p, L, XE, lde);
-
-    for(blas_size i = 0; i < n; ++i) {
-        h[i] = ddot(&p, XE + i, &n, XE + i, &n);
-    }
-
-    if (alloc_l) {
-        blas_free(L);
-    }
 }
 
 void copy_active_set(blas_size n, blas_size p, const double* A, blas_size lda, double* XE,
@@ -209,7 +204,7 @@ double stddev(const double* data, blas_size n) {
 
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
-                        int has_intercept,
+                        int has_intercept, int use_rfp,
                         double tolerance, double* alo, double* leverage) {
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
 
@@ -240,7 +235,8 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
             copy_active_set(n, p, A, lda, XE, current_index);
             alo_elastic_net_rfp(
                 n, current_index.size(), XE, n, lambda[i], alpha, has_intercept,
-                leverage + i * ld_leverage, L);
+                leverage + i * ld_leverage, L,
+                use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full);
         }
         
         alo[i] = compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);

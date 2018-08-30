@@ -19,6 +19,9 @@ extern "C" {
  * @param[in] y: The vector of observed responses, a vector of length n.
  * @param[in] lambda: The vector of regularization values, a vector of length m.
  * @param alpha: The elastic net parameter.
+ * @param has_intercept: Whether the model was fitted with an intercept term.
+ * @param use_rfp: Whether to use the rectangular packed format or computations.
+ *      This uses significantly less memory.
  * @param[out] alo: A vector of length m, will contain the ALOCV value for each tuning.
  * @param[out, optional] leverage: If provided, a n x m matrix which will contain the
  *      leverage values for each observation and tuning.
@@ -26,7 +29,7 @@ extern "C" {
  */
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
-                        int has_intercept, double tolerance,
+                        int has_intercept, int use_rfp, double tolerance,
                         double* alo, double* leverage);
 
 #ifdef __cplusplus
