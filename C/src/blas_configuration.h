@@ -30,7 +30,7 @@
 #define dpotrf F77_CALL(dpotrf)
 #define dsyrk F77_CALL(dsyrk)
 
-#define WENDA_RFP_ENABLE_SHIMS
+#define ALOCV_LAPACK_NO_RFP
 
 #else
 #include "blas.h"
