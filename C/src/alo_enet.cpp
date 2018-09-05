@@ -146,8 +146,6 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
         L = (double*)blas_malloc(16, sizeof(double) * sym_num_elements(p, format));
     }
 
-    int ldl = p + (p % 2 == 0 ? 1 : 0);
-
     double zero = 0;
     double one = 1;
 
@@ -204,9 +202,10 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
                         const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
                         int has_intercept, int use_rfp,
                         double tolerance, double* alo, double* leverage) {
-    blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
+    SymmetricFormat format = use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full;
 
-    const std::size_t l_size = max_active * (max_active + 1) / 2;
+    blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
+    const std::size_t l_size = sym_num_elements(max_active, format);
 
     double* L = (double*)blas_malloc(16, l_size * sizeof(double));
     double* XE = (double*)blas_malloc(16, max_active * n * sizeof(double));
@@ -233,8 +232,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
             copy_active_set(n, p, A, lda, XE, current_index);
             alo_elastic_net_rfp(
                 n, current_index.size(), XE, n, lambda[i], alpha, has_intercept,
-                leverage + i * ld_leverage, L,
-                use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full);
+                leverage + i * ld_leverage, L, format);
         }
         
         alo[i] = compute_alo(n, p, A, lda, y, B + i * ldb, leverage + i * ld_leverage);
