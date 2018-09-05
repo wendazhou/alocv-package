@@ -5,13 +5,8 @@
 #include <numeric>
 #include <cmath>
 
+#include "gram_utils.hpp"
 
-namespace {
-
-enum class SymmetricFormat {
-    Full,
-    RFP
-};
 
 /*! Computes the Gram matrix of the given dataset in RFP format.
  * 
@@ -31,10 +26,11 @@ void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, dou
     const bool is_odd = p % 2;
     const blas_size p2 = p / 2;
     const blas_size p1 = p - p2;
+    const blas_size ldl = is_odd ? p : p + 1;
 
-    dsyrk("L", "T", &p1, &n, &one, XE, &lde, &zero, L + (is_odd ? 0 : 1), &p);
-    dsyrk("U", "T", &p2, &n, &one, XE + p1, &lde, &zero, L + (is_odd ? p : 0), &p);
-    dgemm("T", "N", &p2, &p1, &n, &one, XE + p1, &lde, XE, &lde, &zero, L + p1, &p);
+    dsyrk("L", "T", &p1, &n, &one, XE, &lde, &zero, L + (is_odd ? 0 : 1), &ldl);
+    dsyrk("U", "T", &p2, &n, &one, XE + p1 * lde, &lde, &zero, L + (is_odd ? p : 0), &ldl);
+    dgemm("T", "N", &p2, &p1, &n, &one, XE + p1 * lde, &lde, XE, &lde, &zero, L + p1 + (is_odd ? 0 : 1), &ldl);
 #endif
 }
 
@@ -94,10 +90,12 @@ void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, bla
     const double neg_one = -1;
 
     dtrsm("R", "L", "T", "N", &n, &p1, &one, L + (is_odd ? 0 : 1), &ldl, XE, &lde);
-    dgemm("N", "T", &n, &p1, &p2, &neg_one, XE, &lde, L + p1 + (is_odd ? 0 : 1), &ldl, &one, XE + p1 * lde, &lde);
-    dtrsm("R", "U", "N", "N", &n, &p2, &one, L + p, &ldl, XE + p1 * lde, &lde);
+    dgemm("N", "T", &n, &p2, &p1, &neg_one, XE, &lde, L + p1 + (is_odd ? 0 : 1), &ldl, &one, XE + p1 * lde, &lde);
+    dtrsm("R", "U", "N", "N", &n, &p2, &one, L + (is_odd ? p : 0), &ldl, XE + p1 * lde, &lde);
 #endif
 }
+
+namespace {
 
 void offset_diagonal(blas_size p, double* L, double value, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {

@@ -44,3 +44,5 @@ endif()
 add_executable(bench bench/main.c)
 target_link_libraries(bench PRIVATE alocv)
 target_compile_definitions(bench PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+add_subdirectory(tests)

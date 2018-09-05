@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
         break;
     case 1:
         printf("Computing ALO for method: Elastic-Net\n");
-        enet_compute_alo_d(n, p, m, A, n, B, p, y, lambda, 0.9, 0, 1e-5, alo_result, NULL);
+        enet_compute_alo_d(n, p, m, A, n, B, p, y, lambda, 0.9, 0, 0, 1e-5, alo_result, NULL);
         break;
     default:
         printf("Unknown method");
