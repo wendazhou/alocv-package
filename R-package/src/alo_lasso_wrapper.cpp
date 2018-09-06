@@ -21,13 +21,14 @@ List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y) {
 
 // [[Rcpp::export]]
 List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y,
-                   NumericVector lambda, double alpha, bool has_intercept) {
+                   NumericVector lambda, double alpha, bool has_intercept,
+                   double tolerance = 1e-5, bool use_rfp = true) {
     NumericVector alo(B.ncol());
     NumericMatrix leverage(A.nrow(), B.ncol());
 
     enet_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A[0], A.nrow(),
                        &B[0], B.nrow(), &y[0], &lambda[0],
-                       alpha, has_intercept, 1e-5,
+                       alpha, has_intercept, use_rfp, tolerance,
                        &alo[0], &leverage[0]);
 
     List result;

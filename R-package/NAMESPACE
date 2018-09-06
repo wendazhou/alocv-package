@@ -2,6 +2,7 @@
 
 S3method(alocv,elnet)
 S3method(plot,alo)
+export(alo.glmnet)
 export(alocv)
 importFrom(Rcpp,sourceCpp)
 useDynLib(alocv)

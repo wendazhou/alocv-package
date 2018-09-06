@@ -17,3 +17,71 @@ NULL
 alocv <- function(fit, ...) {
     UseMethod('alocv', fit)
 }
+
+#' Does approximate leave-one-out cross validation for glmnet.
+#'
+#' See glmnet for parameter description
+#'
+#' @export
+alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multinomial"),
+                       weights, offset=NULL, alpha=1, nlambda=100,
+                       lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
+                       lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,
+                       dfmax = nvars + 1, type.multinomial=c("ungrouped", "grouped")) {
+    family = match.arg(family)
+    alpha = as.double(alpha)
+    nlam = as.integer(nlambda)
+
+    nobs = nrow(x)
+    nvars = ncol(x)
+
+    glmnet.call <- match.call()
+    glmnet.call[[1]] <- quote(glmnet::glmnet)
+
+    fitted <- eval(glmnet.call)
+
+    if(standardize) {
+        rescaled <- glmnet_rescale(x, fitted$a0, fitted$beta, intercept, family)
+        x <- rescaled$x
+        a0 <- rescaled$a0s
+        beta <- rescaled$betas
+    } else {
+        a0 <- fitted$a0
+        beta <- as.matrix(fitted$beta)
+    }
+
+    if(family == "gaussian") {
+        if(alpha == 1 && !intercept) {
+            alo <- alo_lasso_rcpp(x, beta, y)
+        } else {
+            alo <- alo_enet_rcpp(x, beta, y, fitted$lambda, alpha, intercept)
+        }
+    } else {
+        stop("Only gaussian family supported.")
+    }
+
+    class(fitted) <- c("alo", class(fitted))
+    fitted$alo <- alo$alo
+    fitted$leverage <- alo$leverage
+
+    fitted
+}
+
+glmnet_rescale = function(X, a0, beta, intercept, family) {
+    n = nrow(X)
+    mean_X = colMeans(X)
+    sd_X = sqrt(colSums(X^2 / n) - colSums(X / n)^2)
+    X = scale(X, center = intercept, scale = sd_X) # no centering if no intercept
+
+    if (family == "multinomial") {
+        beta = lapply(beta, "*", sd_X)
+        for (i in 1:nrow(a0)) {
+            a0[i, ] = as.vector(a0[i, ] + mean_X %*% beta[[i]])
+        }
+    } else {
+        beta = beta * sd_X
+        a0 = as.vector(a0 + mean_X %*% beta)
+    }
+
+    return(list(Xs = X, a0s = a0, betas = beta))
+}

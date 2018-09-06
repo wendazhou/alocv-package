@@ -39,6 +39,6 @@ test_that("alocv_can_apply_to_glmnet", {
     beta <- matrix(rnorm(20) * rbinom(20, 1, 0.5), ncol=1)
     y <- x %*% beta + rnorm(100, sd = 0.1)
 
-    fitted <- glmnet(x, y)
+    fitted <- glmnet(x, y, standardize = F, intercept = F)
     alocv(fitted)
 })

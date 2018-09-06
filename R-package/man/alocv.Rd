@@ -4,7 +4,6 @@
 \name{alocv}
 \alias{alocv}
 \alias{alocv-package}
-\alias{alocv}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
 \usage{
 alocv(fit, ...)
