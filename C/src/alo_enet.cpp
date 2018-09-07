@@ -196,22 +196,12 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
     }
 }
 
-/*! Compute fitted response in link space.
- *
- * @param n The number of observations
- * @param k The number of non-zero parameters.
- * @param XE[in] A matrix containing the active set predictors
- * @param beta[in] A vector containing the parameters.
- * @param a0 A double representing the value of the intercept. Ignored if no intercept.
- * @param has_intercept If true, signifies that an intercept was fitted.
- * @param index A list containing the indices of the active set.
- * @param y_fitted[out] A vector of length n which will be filled with the fitted link space result.
- * 
- */
+}
+
+
 void compute_fitted(blas_size n, blas_size k, const double* XE,
                     const double* beta, double a0, bool has_intercept,
-                    const std::vector<blas_size>& index,
-                    double* y_fitted) {
+                    const std::vector<blas_size>& index, double* y_fitted) {
     double* beta_active = (double*)blas_malloc(16, (index.size() + has_intercept) * sizeof(double));
 
     if(has_intercept) {
@@ -242,8 +232,6 @@ double compute_alo_fitted(blas_size n, const double* y, const double* y_fitted, 
     }
 
     return acc / n;
-}
-
 }
 
 
@@ -279,6 +267,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
         if(current_index.empty() && !has_intercept) {
             // no selected variables
             std::fill(leverage + i * ld_leverage, leverage + i * ld_leverage + n, 0.0);
+            std::fill(y_fitted, y_fitted + n, 0.0);
         } else {
             copy_active_set(n, A, lda, has_intercept, current_index, std::vector<blas_size>(), XE, n);
             compute_fitted(n, current_index.size(), XE, B + ldb * i, has_intercept ? a0[i] : 0.0,

@@ -45,7 +45,31 @@ void copy_active_set(blas_size n, const double* A, blas_size lda, bool has_inter
     }
 }
 
-
+namespace {
+/*! Utility function to update the Cholesky decomposition along the lasso path.
+ *
+ * An essential component in computing the leverage values for the LASSO estimator is to compute the
+ * inverse of the covariance of the active set. We do this by maintaining the Cholesky decomposition
+ * of the covariance of the active set along the solution path, and update this decomposition iteratively
+ * as we go down the solution path.
+ * 
+ * For performance reasons, we only append new active coordinates at the end of the decomposition.
+ * For this reason, we need to maintain the corresponding ordering of the elements in our decomposition.
+ * 
+ * @param[in] n The number of observations (or rows) of A
+ * @param[in] A The regression matrix
+ * @param[in] lda The leading dimension of A
+ * @param[in,out] L The Cholesky decomposition of the current active set in lower triangular form.
+ * @param[in] ldl The leading dimension of L
+ * @param[out] W The updated regression matrix restricted to the active set.
+ * @param[in] ldw The leading dimension of W.
+ * @param[in] len_index The size of the current active set.
+ * @param[in] index The indices of the columns that are currently active.
+ * @param[in] len_index_new The size of the new active set.
+ * @param[in,out] index_new The indices of the new active set. This will be re-ordered to represent the new
+ *      active set in the order in which they appear in the decomposition.
+ *
+ */
 void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
                                double* L, blas_size ldl,
                                double* W, blas_size ldw, 
@@ -106,6 +130,16 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
 }
 
 
+/*! Utility function to compute the leverage value from the cholesky decomposition maintained by the algorithm.
+ *
+ * @param[in] n The number of observations (or rows of A).
+ * @param[in] k The size of the active set.
+ * @param[in] W The regression matrix on the active set.
+ * @param[in] ldw The leading dimension of W.
+ * @param[in] L The Cholesky decomposition of the covariance of the active set.
+ * @param[in] ldl The leading dimension of L.
+ * @param[out] leverage The computed leverage values.
+ */
 void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw,
                                        const double* L, blas_size ldl, double* leverage) {
     double one_d = 1.0;
@@ -114,6 +148,7 @@ void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas
     for(blas_size i = 0; i < n; ++i) {
         leverage[i] = ddot(&k, W + i, &n, W + i, &n);
     }
+}
 }
 
 /*! For a given coefficient set beta, finds the active set by a magnitude-based rule.
@@ -148,32 +183,6 @@ blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B
     return max_size;
 }
 
-
-double compute_alo(blas_size n, blas_size p, const double* A, blas_size lda,
-                   const double* y, const double* beta, const double* leverage) {
-    double* temp = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
-
-    // temp = y
-    std::copy(y, y + n, temp);
-
-    double one_d = 1.0;
-    double min_one_d = -1.0;
-    blas_size one_i = 1;
-
-    // temp = X * beta - y
-    dgemv("N", &n, &p, &one_d, A, &lda, beta, &one_i, &min_one_d, temp, &one_i);
-
-    double acc = 0;
-
-    for(blas_size i = 0; i < n; ++i) {
-        double res = temp[i] / (1 - leverage[i]);
-        acc += res * res;
-    }
-
-    blas_free(temp);
-
-    return acc / n;
-}
 
 void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double* L, blas_size ldl) {
     blas_size one = 1;
@@ -214,6 +223,8 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
     double* W = static_cast<double*>(blas_malloc(16, n * max_active * sizeof(double)));
     blas_size ldw = n;
 
+    double* y_fitted = (double*)blas_malloc(16, n * sizeof(double));
+
     std::vector<blas_size> active_index;
 
     blas_size ld_leverage;
@@ -239,7 +250,8 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
 
             // fill the leverage to 0
             std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
-            alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i);
+            std::fill(y_fitted, y_fitted + n, 0.0);
+            alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i);
             L_active = 0;
             continue;
         }
@@ -276,14 +288,20 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
             continue;
         }
 
+        // compute the fitted values
+        compute_fitted(n, num_active, W, B + i * ldb, 0.0, false, active_index, y_fitted);
+
         // compute the leverage value.
         lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage + ld_leverage * i);
+
         // compute the current ALO vlue.
-        alo[i] = compute_alo(n, p, A, lda, y, B + ldb * i, leverage + ld_leverage * i);
+        alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i);
     }
 
     // free all the buffers
     blas_free(L);
+    blas_free(y_fitted);
+    blas_free(W);
 
     if (alloc_leverage) {
         blas_free(leverage);
