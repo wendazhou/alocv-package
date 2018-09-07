@@ -17,6 +17,7 @@ extern "C" {
  * @param[in] B: The fitted values, a p x m matrix in column-major order.
  * @param ldb: The leading dimension of B.
  * @param[in] y: The vector of observed responses, a vector of length n.
+ * @param[in, optional] a0: A vector of fitted intercept values, or NULL if no intercept has been fitted.
  * @param[in] lambda: The vector of regularization values, a vector of length m.
  * @param alpha: The elastic net parameter.
  * @param has_intercept: Whether the model was fitted with an intercept term.
@@ -28,7 +29,8 @@ extern "C" {
  * 
  */
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
-                        const double* B, blas_size ldb, const double* y, const double* lambda, double alpha,
+                        const double* B, blas_size ldb, const double* y, const double* a0,
+                        const double* lambda, double alpha,
                         int has_intercept, int use_rfp, double tolerance,
                         double* alo, double* leverage);
 

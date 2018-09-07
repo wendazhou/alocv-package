@@ -41,8 +41,8 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
     fitted <- eval(glmnet.call)
 
     if(standardize) {
-        rescaled <- glmnet_rescale(x, fitted$a0, fitted$beta, intercept, family)
-        x <- rescaled$x
+        rescaled <- glmnet_rescale(x, fitted$a0, as.matrix(fitted$beta), intercept, family)
+        x <- rescaled$Xs
         a0 <- rescaled$a0s
         beta <- rescaled$betas
     } else {
@@ -54,7 +54,9 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
         if(alpha == 1 && !intercept) {
             alo <- alo_lasso_rcpp(x, beta, y)
         } else {
-            alo <- alo_enet_rcpp(x, beta, y, fitted$lambda, alpha, intercept)
+            alo <- alo_enet_rcpp(x, beta, y,
+                                 fitted$lambda * lambda_scale(y), alpha,
+                                 has_intercept=intercept, a0=a0)
         }
     } else {
         stop("Only gaussian family supported.")
@@ -84,4 +86,11 @@ glmnet_rescale = function(X, a0, beta, intercept, family) {
     }
 
     return(list(Xs = X, a0s = a0, betas = beta))
+}
+
+lambda_scale <- function(y) {
+    n <- length(y)
+    sy <- sqrt(mean((y - mean(y)) ^ 2))
+
+    n / sy
 }

@@ -19,8 +19,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // alo_enet_rcpp
-List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, NumericVector lambda, double alpha, bool has_intercept, double tolerance, bool use_rfp);
-RcppExport SEXP _alocv_alo_enet_rcpp(SEXP ASEXP, SEXP BSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP has_interceptSEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP) {
+List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, NumericVector lambda, double alpha, bool has_intercept, Nullable<NumericVector> a0, double tolerance, bool use_rfp);
+RcppExport SEXP _alocv_alo_enet_rcpp(SEXP ASEXP, SEXP BSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP has_interceptSEXP, SEXP a0SEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,16 +30,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< bool >::type has_intercept(has_interceptSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type a0(a0SEXP);
     Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
-    rcpp_result_gen = Rcpp::wrap(alo_enet_rcpp(A, B, y, lambda, alpha, has_intercept, tolerance, use_rfp));
+    rcpp_result_gen = Rcpp::wrap(alo_enet_rcpp(A, B, y, lambda, alpha, has_intercept, a0, tolerance, use_rfp));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_alocv_alo_lasso_rcpp", (DL_FUNC) &_alocv_alo_lasso_rcpp, 3},
-    {"_alocv_alo_enet_rcpp", (DL_FUNC) &_alocv_alo_enet_rcpp, 8},
+    {"_alocv_alo_enet_rcpp", (DL_FUNC) &_alocv_alo_enet_rcpp, 9},
     {NULL, NULL, 0}
 };
 
