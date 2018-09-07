@@ -53,7 +53,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, double*
  *
  */
 void lasso_update_cholesky_w_d(
-    blas_size n, double* A, blas_size lda,
+    blas_size n, const double* A, blas_size lda,
     double* L, blas_size ldl,
     double* W, blas_size ldw,
     blas_size len_index, blas_size* index,
@@ -69,7 +69,7 @@ void lasso_update_cholesky_w_d(
  * @param[in] ldl The leading dimension of L.
  * @param[out] leverage The computed leverage values.
  */
-void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw, double* L, blas_size ldl, double* leverage);
+void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw, const double* L, blas_size ldl, double* leverage);
 
 #ifdef __cplusplus
 }

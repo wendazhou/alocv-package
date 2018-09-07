@@ -246,19 +246,6 @@ double compute_alo_fitted(blas_size n, const double* y, const double* y_fitted, 
 
 }
 
-void copy_active_set(blas_size n, blas_size p, const double* A, blas_size lda, double* XE,
-                     const std::vector<blas_size>& active_set, bool has_intercept) {
-    if(has_intercept) {
-        // First column is intercept column if present.
-        std::fill(XE, XE + n, 1.0);
-    }
-    
-    for(blas_size i = 0; i < active_set.size(); ++i) {
-        blas_size orig_column = active_set[i];
-        std::copy(A + orig_column * lda, A + orig_column * lda + n,
-                  XE + (i + has_intercept) * n);
-    }
-}
 
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* a0,
@@ -293,7 +280,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
             // no selected variables
             std::fill(leverage + i * ld_leverage, leverage + i * ld_leverage + n, 0.0);
         } else {
-            copy_active_set(n, p, A, lda, XE, current_index, has_intercept);
+            copy_active_set(n, A, lda, has_intercept, current_index, std::vector<blas_size>(), XE, n);
             compute_fitted(n, current_index.size(), XE, B + ldb * i, has_intercept ? a0[i] : 0.0,
                            has_intercept, current_index, y_fitted);
             alo_elastic_net_rfp(

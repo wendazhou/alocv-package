@@ -10,8 +10,43 @@
 #include <cmath>
 #include <cstdio>
 
+/*! Copies over the active predictors to a packed matrix.
+ *
+ * @param n The number of observations
+ * @param[in] A The matrix of all predictors.
+ * @param lda The leading dimension of A.
+ * @param has_intercept Whether to add an intercept column.
+ * @param index_active The index of currently active predictors.
+ * @param index_added Another optional vector of indices to append to the active predictors.
+ * @param[out] W A matrix to copy the predictors to.
+ * @param ldw The leading dimension of W, must be at least n.
+ * 
+ * 
+ */
+void copy_active_set(blas_size n, const double* A, blas_size lda, bool has_intercept,
+                   std::vector<blas_size> const& index_active, std::vector<blas_size> const& index_added,
+                   double* W, blas_size ldw) {
+    std::size_t col_w = 0;
 
-void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
+    if(has_intercept) {
+        std::fill(W, W + n, 1.0);
+        col_w += 1;
+    }
+
+    for (auto col_a : index_active) {
+        std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+        col_w += 1;
+    }
+
+    // Add the new indices.
+    for (auto col_a : index_added) {
+        std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
+        col_w += 1;
+    }
+}
+
+
+void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
                                double* L, blas_size ldl,
                                double* W, blas_size ldw, 
                                blas_size len_index, blas_size* index,
@@ -46,25 +81,9 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
         cholesky_delete_inplace_d(active_index.size(), loc, L, ldl);
         active_index.erase(it);
     }
+
+    copy_active_set(n, A, lda, false, active_index, index_added, W, ldw);
     
-    {
-        std::size_t col_w = 0;
-
-        // Once we have deleted required columns, we are only appending to the
-        // end. This is a good time to construct the W matrix.
-        // First add all the existing indices.
-        for (auto col_a: active_index) {
-            std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
-            col_w += 1;
-        }
-
-        // Add the new indices.
-        for (auto col_a : index_added) {
-            std::copy(A + col_a * lda, A + col_a * lda + n, W + ldw * col_w);
-            col_w += 1;
-        }
-    }
-
     // Precompute the border of the matrix we are appending.
     blas_size num_existing = active_index.size();
     blas_size num_added = index_added.size();
@@ -88,7 +107,7 @@ void lasso_update_cholesky_w_d(blas_size n, double* A, blas_size lda,
 
 
 void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas_size ldw,
-                                       double* L, blas_size ldl, double* leverage) {
+                                       const double* L, blas_size ldl, double* leverage) {
     double one_d = 1.0;
     dtrsm("R", "L", "T", "N", &n, &k, &one_d, L, &ldl, W, &n);
 
@@ -233,7 +252,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.
-            create_w(n, W, ldw, A, lda, current_index);
+            copy_active_set(n, A, lda, false, active_index, std::vector<blas_size>(), W, ldw);
             compute_cholesky(n, num_active, W, ldw, L, ldl);
         }
 

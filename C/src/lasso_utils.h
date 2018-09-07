@@ -34,3 +34,20 @@ blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B
  */
 double compute_alo(blas_size n, blas_size p, const double* A, blas_size lda, const double* y,
                    const double* beta, const double* leverage);
+
+
+/*! Copies over the active predictors to a packed matrix.
+ *
+ * @param n The number of observations
+ * @param[in] A The matrix of all predictors.
+ * @param lda The leading dimension of A.
+ * @param has_intercept Whether to add an intercept column.
+ * @param index_active The index of currently active predictors.
+ * @param index_added Another optional vector of indices to append to the active predictors.
+ * @param[out] W A matrix to copy the predictors to.
+ * @param ldw The leading dimension of W, must be at least n.
+ * 
+ */
+void copy_active_set(blas_size n, const double* A, blas_size lda, bool has_intercept,
+                   std::vector<blas_size> const& index_active, std::vector<blas_size> const& index_added,
+                   double* W, blas_size ldw);
