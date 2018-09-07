@@ -252,7 +252,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.
-            copy_active_set(n, A, lda, false, active_index, std::vector<blas_size>(), W, ldw);
+            copy_active_set(n, A, lda, false, current_index, std::vector<blas_size>(), W, ldw);
             compute_cholesky(n, num_active, W, ldw, L, ldl);
         }
 
