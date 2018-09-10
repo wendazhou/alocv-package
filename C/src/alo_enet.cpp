@@ -95,17 +95,7 @@ void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, bla
 #endif
 }
 
-namespace {
 
-
-/*! Adds the given value to the diagonal of the matrix.
- *
- * @param p The size of the matrix.
- * @param[in, out] L The matrix in the given format.
- * @param value The value to add to the diagonal.
- * @param skip_first If true, the value is not added to the first element.
- * 
- */
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {
         for(int i = skip_first; i < p; ++i) {
@@ -117,16 +107,21 @@ void offset_diagonal(blas_size p, double* L, double value, bool skip_first, Symm
         if(p % 2 == 1) {
             // odd case
 
+            blas_size ldl = p;
+
             if(!skip_first) {
                 L[0] += value;
             }
 
             for(blas_size i = 1; i < (p + 1) / 2; ++i) {
-                L[i + p * i] += value;
-                L[i + p * i - 1] += value;
+                L[i + ldl * i] += value;
+                L[i + ldl * i - 1] += value;
             }
         } else {
             // even case
+
+            blas_size ldl = p + 1;
+
             L[0] += value;
 
             if(!skip_first) {
@@ -134,12 +129,14 @@ void offset_diagonal(blas_size p, double* L, double value, bool skip_first, Symm
             }
 
             for(blas_size i = 1; i < p / 2; ++i) {
-                L[i + p * i] += value;
-                L[i + p * i + 1] += value;
+                L[i + ldl * i] += value;
+                L[i + ldl * i + 1] += value;
             }
         }
     }
 }
+
+namespace {
 
 blas_size sym_num_elements(blas_size p, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {

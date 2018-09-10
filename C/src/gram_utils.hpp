@@ -42,4 +42,18 @@ int compute_cholesky(blas_size p, double* L, SymmetricFormat format);
  */
 void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, blas_size lde, SymmetricFormat format);
 
+
+
+/*! Adds the given value to the diagonal of the matrix (represented in the specified format).
+ *
+ * If specified, this function will not increment the top-left element of the matrix.
+ * 
+ * @param p The size of the matrix.
+ * @param[in, out] L The matrix in the given format.
+ * @param value The value to add to the diagonal.
+ * @param skip_first If true, the value is not added to the first element (top left element).
+ * 
+ */
+void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format);
+
 #endif // WENDA_GRAM_UTILS_H_INCLUDED

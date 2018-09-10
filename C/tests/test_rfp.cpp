@@ -139,3 +139,49 @@ TEST_CASE("Triangular Inverse Correct for RFP (even)", "[RFP]") {
 TEST_CASE("Triangular Inverse Correct for RFP (odd)", "[RFP]") {
     REQUIRE(inverse_correct(6, 5));
 }
+
+namespace {
+
+bool increment_diag_correct(int n, bool skip_first) {
+    double* X = (double*)blas_malloc(16, n * n * sizeof(double));
+    double* X_rf = (double*)blas_malloc(16, n * (n + 1) * sizeof(double) / 2);
+
+
+    int info;
+
+    std::generate_n(X, n * n, [counter=0]() mutable { return counter++;});
+
+    dtrttf("N", "L", &n, X, &n, X_rf, &info);
+    offset_diagonal(n, X_rf, 3.5, skip_first, SymmetricFormat::RFP);
+    dtfttr("N", "L", &n, X_rf, X, &n, &info);
+
+    for(int i = skip_first ? 1 : 0; i < n; ++i) {
+        if(X[i + n * i] != i + n * i + 3.5) {
+            return false;
+        }
+    }
+
+    if(skip_first && X[0] != 0) {
+        return false;
+    }
+
+    return true;
+}
+
+}
+
+TEST_CASE("Offset Diagonal Correct for RFP (even)", "[RFP]") {
+    REQUIRE(increment_diag_correct(6, false));
+}
+
+TEST_CASE("Offset Diganola Correct for RFP (odd)", "[RFP]") {
+    REQUIRE(increment_diag_correct(5, false));
+}
+
+TEST_CASE("Offset Diagonal with skip Correct for RFP (even)", "[RFP]") {
+    REQUIRE(increment_diag_correct(6, true));
+}
+
+TEST_CASE("OFfset Diagonal with skip correct for RFP (odd)", "[RFP]") {
+    REQUIRE(increment_diag_correct(5, true));
+}
