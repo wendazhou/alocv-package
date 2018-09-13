@@ -4,20 +4,36 @@ library(glmnet)
 
 args <- commandArgs(TRUE)
 
-if(length(args) != 3) {
-    print("Expected three arguments")
+if(!(length(args) %in% c(3, 4))) {
+    print("Expected three or 4 arguments arguments")
     quit(status = 1)
 }
 
 n <- as.integer(args[1])
 p <- as.integer(args[2])
-out_name <- args[3]
+out_name <- args[-1]
 
-X <- matrix(rnorm(n * p), nrow=n, ncol=p)
+if(length(args) == 4) {
+    family <- args[3]
+} else {
+    family <- "gaussian"
+}
+
+config <- switch(
+    family,
+    gaussian = list(link = function(x) { x },
+                    rng = function(x) { rnorm(length(x), mean=x, sd=0.1)}),
+    binomial = list(link = function(x) { 1 / (1 + exp(x)) },
+                    rng = function(x) { rbinom(length(x), 1, prob=x)}),
+    poisson = list(link = exp,
+                   rng = function(x) { rpois(length(x), 10 * x) }))
+
+
+X <- matrix(rnorm(n * p, sd = 1 / sqrt(n)), nrow=n, ncol=p)
 beta <- matrix(rnorm(p) * rbinom(p, 1, 0.2), ncol=1)
-y <- X %*% beta + rnorm(n, sd=0.1)
+y <- config$rng(config$link(X %*% beta))
 
-fitted <- glmnet(X, y)
+fitted <- glmnet::glmnet(X, y, family = family)
 
 out_file <- file(out_name, "wb")
 

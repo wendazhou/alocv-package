@@ -93,3 +93,72 @@ test_that("alocv correct for enet with scaling and intercept", {
 
     expect_equal(fitted$alo, expected_alo)
 })
+
+make_example_poisson <- function(n, p, eps=0.5, seed=42) {
+    data <- withr::with_seed(seed, {
+        x <- matrix(rnorm(n * p), nrow=n, ncol=p)
+        beta <- matrix(rnorm(p) * rbinom(p, 1, eps), ncol=1)
+        y <- rpois(n, exp(x %*% beta))
+        list(x=x, beta=beta, y=y)
+    })
+
+    data
+}
+
+test_that("alocv correct for poisson enet", {
+    data <- make_example_poisson(20, 10)
+    fitted <- alo.glmnet(data$x, data$y, alpha=1, family="poisson", standardize=F, intercept=F)
+
+    fail("Implement the test")
+})
+
+
+make_example_logit <- function(n, p, eps=0.5, seed=42) {
+    data <- withr::with_seed(seed, {
+        x <- matrix(rnorm(n * p), nrow=n, ncol=p)
+        beta <- matrix(rnorm(p) * rbinom(p, 1, eps), ncol=1)
+        y <- rbinom(n, 1, 1 / (1 + exp(-x %*% beta)))
+        list(x=x, beta=beta, y=y)
+    })
+
+    data
+}
+
+test_that("alocv correct for logistic glmnet", {
+    data <- make_example_logit(20, 10)
+
+    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="binomial",
+                         standardize=F, intercept=F)
+
+    fail("Implement the test")
+})
+
+logistic_alo_from_leverage <- function(x, beta, y, leverage) {
+    yhat <- x %*% beta
+    exb <- exp(yhat)
+
+    yalo <- yhat + leverage * (exb / (1 + exb) - y) / (exb / (1 + exb) ^ 2) / (1 - leverage)
+    as.numeric(yalo)
+}
+
+logistic_alo_manual <- function(x, beta, y, alpha, lambda) {
+    n <- length(y)
+    yhat <- x %*% beta
+    exb <- exp(yhat)
+    xe <- x[,beta!=0]
+
+    grad1 <- as.numeric(exb / (1 + exb) - y)
+    grad2 <- as.numeric(exb / (1 + exb)^2)
+    grad2 <- as.numeric(0.25 / cosh(yhat / 2) ^2)
+    grad2_root <- as.numeric(0.5 / cosh(yhat / 2))
+
+    xe <- diag(sqrt(grad2)) %*% xe
+
+    hess <- diag(nrow=ifelse(is.null(ncol(xe)), 1, ncol(xe))) * (1 - alpha) * lambda * n
+    #f <- solve(t(xe) %*% diag(grad2) %*% xe + hess)
+    f <- solve(t(xe) %*% xe + hess)
+    h <- rowSums((xe %*% f) * xe)
+
+    list(yalo = as.numeric(yhat + h * grad1 / grad2 / (1 - h)),
+         leverage = h)
+}

@@ -50,19 +50,32 @@ double get_current_time() {
 
 #endif
 
+typedef enum {
+    AloMethodLasso,
+    AloMethodEnet,
+    AloMethodFishnet,
+    AloMethodLognet,
+} AloMethod;
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         printf("Please pass in input file.\n");
         return 0;
     }
 
-    int method;
+    AloMethod method;
 
     if(!strcmp("lasso", argv[1])) {
-        method = 0;
+        method = AloMethodLasso;
     }
     else if (!strcmp("enet", argv[1])) {
-        method = 1;
+        method = AloMethodEnet;
+    }
+    else if (!strcmp("fishnet", argv[1])) {
+        method = AloMethodFishnet;
+    }
+    else if (!strcmp("lognet", argv[1])) {
+        method = AloMethodLognet;
     }
     else {
         printf("Unknow method specified: %s", argv[1]);
@@ -102,7 +115,18 @@ int main(int argc, char* argv[]) {
         break;
     case 1:
         printf("Computing ALO for method: Elastic-Net\n");
-        enet_compute_alo_d(n, p, m, A, n, B, p, y, NULL, lambda, 0.9, 0, 0, 1e-5, alo_result, NULL);
+        enet_compute_alo_d(n, p, m, A, n, B, p, y, NULL, lambda, 0.9, 0, GlmFamilyGaussian, 0, 1e-5, alo_result,
+                           NULL, NULL, NULL);
+        break;
+    case 2:
+        printf("Computing ALO for method: Poisson Elastic-Net\n");
+        enet_compute_alo_d(n, p, m, A, n, B, p, y, NULL, lambda, 1.0, 0, GlmFamilyPoisson, 1, 1e-5, alo_result,
+                           NULL, NULL, NULL);
+        break;
+    case 3:
+        printf("Computing ALO for method: Logistic Elastic-Net\n");
+        enet_compute_alo_d(n, p, m, A, n, B, p, y, NULL, lambda, 0.9, 0, GlmFamilyLogit, 1, 1e-5, alo_result,
+                           NULL, NULL, NULL);
         break;
     default:
         printf("Unknown method");

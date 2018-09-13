@@ -5,7 +5,7 @@ alo_lasso_rcpp <- function(A, B, y) {
     .Call('_alocv_alo_lasso_rcpp', PACKAGE = 'alocv', A, B, y)
 }
 
-alo_enet_rcpp <- function(A, B, y, lambda, alpha = 1.0, has_intercept = TRUE, a0 = NULL, tolerance = 1e-5, use_rfp = TRUE) {
-    .Call('_alocv_alo_enet_rcpp', PACKAGE = 'alocv', A, B, y, lambda, alpha, has_intercept, a0, tolerance, use_rfp)
+alo_enet_rcpp <- function(A, B, y, lambda, family = 0L, alpha = 1.0, has_intercept = TRUE, a0 = NULL, tolerance = 1e-5, use_rfp = TRUE) {
+    .Call('_alocv_alo_enet_rcpp', PACKAGE = 'alocv', A, B, y, lambda, family, alpha, has_intercept, a0, tolerance, use_rfp)
 }
 

@@ -55,15 +55,26 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
             alo <- alo_lasso_rcpp(x, beta, y)
         } else {
             alo <- alo_enet_rcpp(x, beta, y,
-                                 fitted$lambda * lambda_scale(y), alpha,
+                                 fitted$lambda * lambda_scale(y),
+                                 family=0, alpha=alpha,
                                  has_intercept=intercept, a0=a0)
         }
+    } else if(family == "poisson") {
+        alo <- alo_enet_rcpp(x, beta, y, length(y) * fitted$lambda,
+                             family=1, alpha=alpha,
+                             has_intercept=intercept, a0=a0)
+    } else if (family == "binomial") {
+        alo <- alo_enet_rcpp(x, beta, y, length(y) * fitted$lambda,
+                             family=2, alpha=alpha,
+                             has_intercept=intercept, a0=a0)
     } else {
-        stop("Only gaussian family supported.")
+        stop("Unsupported family")
     }
 
     class(fitted) <- c("alo", class(fitted))
     fitted$alo <- alo$alo
+    fitted$alo_mse <- alo$alo_mse
+    fitted$alo_mae <- alo$alo_mae
     fitted$leverage <- alo$leverage
 
     fitted
