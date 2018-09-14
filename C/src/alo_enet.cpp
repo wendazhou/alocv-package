@@ -132,28 +132,41 @@ template<typename Config>
 AloResult compute_alo_fitted_impl(blas_size n, const double* y, const double* y_fitted, const double* leverage) {
     typename Config::Grad grad;
     typename Config::Grad2 grad2;
-    typename Config::Loss loss;
+    typename Config::LossDeviance deviance;
+    typename Config::LossMse mse;
+    typename Config::LossMae mae;
 
-    double acc = 0;
+    double acc_dev = 0;
     double acc_mse = 0;
     double acc_mae = 0;
 
     for(blas_size i = 0; i < n; ++i) {
         double y_alo = y_fitted[i] + leverage[i] * grad(y[i], y_fitted[i]) / grad2(y[i], y_fitted[i]) / (1 - leverage[i]);
-        double res = y[i] - y_alo;
-        acc += loss(y[i], y_alo);
-        acc_mse += res * res;
-        acc_mae += fabs(res);
+        acc_dev += deviance(y[i], y_alo);
+        acc_mse += mse(y[i], y_alo);
+        acc_mae += mae(y[i], y_alo);
     }
 
     AloResult result;
 
-    result.deviance = acc / n;
+    result.deviance = acc_dev / n;
     result.mse = acc_mse / n;
     result.mae = acc_mae / n;
 
     return result;
 }
+
+struct SquareError {
+    double operator()(double x) {
+        return x * x;
+    }
+};
+
+struct AbsoluteError {
+    double operator()(double x) {
+        return abs(x);
+    }
+};
 
 struct GaussianGlmConfig {
     struct Grad {
@@ -168,12 +181,17 @@ struct GaussianGlmConfig {
         }
     };
 
-    struct Loss {
-        double operator()(double y, double y_fitted) {
-            double res = y - y_fitted;
-            return res * res;
+    template<typename Metric>
+    struct LossMetric {
+        double operator()(double y, double y_fitted) const {
+            Metric metric;
+            return metric(y - y_fitted);
         }
     };
+
+    typedef LossMetric<SquareError> LossDeviance;
+    typedef LossMetric<SquareError> LossMse;
+    typedef LossMetric<AbsoluteError> LossMae;
 };
 
 struct LogisticGlmConfig {
@@ -190,14 +208,28 @@ struct LogisticGlmConfig {
         }
     };
 
-    struct Loss {
+    struct LossDeviance {
         double operator()(double y, double y_fitted) const {
-            double lp = log1p(exp(-y_fitted));
-            double lpc = log1p(exp(y_fitted));
+            y_fitted = std::max(std::min(y_fitted, 11.5), -11.5);
 
-            return y * lp + (1 - y) * lpc;
+            double lp = y * log1p(exp(-y_fitted)) + (1 - y) * log1p(exp(y_fitted));
+            return 2 * lp;
         }
     };
+
+    template<typename Metric>
+    struct LossMetric {
+        double operator()(double y, double y_fitted) const {
+            Metric metric;
+
+            double mu_fitted  = 1 / (1 + exp(-y_fitted));
+            double res = (y - mu_fitted);
+            return 2 * metric(res);
+        }
+    };
+
+    typedef LossMetric<SquareError> LossMse;
+    typedef LossMetric<AbsoluteError> LossMae;
 };
 
 struct PoissonGlmConfig {
@@ -213,7 +245,7 @@ struct PoissonGlmConfig {
         }
     };
 
-    struct Loss {
+    struct LossDeviance {
         double operator()(double y, double y_fitted) const {
             if(y > 0) {
                 return y * log(y) - y + exp(y_fitted) - y * y_fitted;
@@ -222,6 +254,19 @@ struct PoissonGlmConfig {
             }
         }
     };
+
+    template<typename Metric>
+    struct LossMetric {
+        double operator()(double y, double y_fitted) const {
+            Metric metric;
+            double mu_fitted = exp(y_fitted);
+
+            return metric(y - mu_fitted);
+        }
+    };
+
+    typedef LossMetric<SquareError> LossMse;
+    typedef LossMetric<AbsoluteError> LossMae;
 };
 
 
