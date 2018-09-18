@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 
 // [[Rcpp::export]]
-List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y) {
+List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, bool has_intercept=true) {
     NumericVector alo(B.ncol());
     NumericMatrix leverage(A.nrow(), B.ncol());
 

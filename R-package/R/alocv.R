@@ -9,16 +9,7 @@
 NULL
 
 
-#' Computes an approximate-leave-one out risk for the given fit.
-#'
-#' @param fit An object containing the fitted estimator.
-#'
-#' @export
-alocv <- function(fit, ...) {
-    UseMethod('alocv', fit)
-}
-
-#' Does approximate leave-one-out cross validation for glmnet.
+#' Fits and computes the approximate leave-one-out cross validation for glmnet.
 #'
 #' See glmnet for parameter description
 #'
@@ -27,7 +18,8 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
                        weights, offset=NULL, alpha=1, nlambda=100,
                        lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
                        lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,
-                       dfmax = nvars + 1, type.multinomial=c("ungrouped", "grouped")) {
+                       dfmax = nvars + 1, type.multinomial=c("ungrouped", "grouped"),
+                       ...) {
     family = match.arg(family)
     alpha = as.double(alpha)
     nlam = as.integer(nlambda)
@@ -35,10 +27,10 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
     nobs = nrow(x)
     nvars = ncol(x)
 
-    glmnet.call <- match.call()
-    glmnet.call[[1]] <- quote(glmnet::glmnet)
-
-    fitted <- eval(glmnet.call)
+    fitted <- glmnet::glmnet(x, y, family, weights, offset, alpha, nlambda,
+                             lambda.min.ratio, lambda, standardize, intercept,
+                             thresh, dfmax, ...,
+                             type.multinomial=type.multinomial)
 
     if(standardize) {
         rescaled <- glmnet_rescale(x, fitted$a0, as.matrix(fitted$beta), intercept, family)
@@ -51,8 +43,8 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
     }
 
     if(family == "gaussian") {
-        if(alpha == 1 && !intercept) {
-            alo <- alo_lasso_rcpp(x, beta, y)
+        if(alpha == 1 && !has_intercept) {
+            alo <- alo_lasso_rcpp(x, beta, y, has_intercept=intercept)
         } else {
             alo <- alo_enet_rcpp(x, beta, y,
                                  fitted$lambda * lambda_scale(y),

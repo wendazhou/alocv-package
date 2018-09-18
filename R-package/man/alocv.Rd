@@ -5,14 +5,6 @@
 \alias{alocv}
 \alias{alocv-package}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
-\usage{
-alocv(fit, ...)
-}
-\arguments{
-\item{fit}{An object containing the fitted estimator.}
-}
 \description{
 alocv: A package for computing unbiased risk estimates for high-dimensional models.
-
-Computes an approximate-leave-one out risk for the given fit.
 }

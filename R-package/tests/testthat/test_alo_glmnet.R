@@ -3,19 +3,19 @@ library(alocv)
 library(glmnet)
 
 make_example <- function(n, p, eps=0.5, seed=42) {
-    data <- withr::with_seed(seed,
+    df <- withr::with_seed(seed,
         list(x = matrix(rnorm(n * p), nrow=n, ncol=p),
              beta = matrix(rnorm(p) * rbinom(p, 1, eps), ncol=1),
              err = rnorm(n, sd=0.1)))
 
-    data$y <- with(data, x %*% beta + err)
-    data
+    df$y <- with(df, x %*% beta + err)
+    df
 }
 
 test_that("alocv correct for pure lasso", {
-    data <- make_example(20, 10)
+    df <- make_example(20, 10)
 
-    fitted <- alo.glmnet(data$x, data$y, standardize=F, intercept=F)
+    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=F)
 
     expected_alo <- c(
         7.99425746, 7.96533423, 7.05010423, 6.29263845, 8.95506254, 7.85682146, 6.93893283,
@@ -26,6 +26,12 @@ test_that("alocv correct for pure lasso", {
         0.09776550, 0.08869874, 0.12607060, 0.10514547)
 
     expect_equal(fitted$alo, expected_alo)
+})
+
+
+test_that("alocv correct for pure lasso with intercept", {
+    df <- make_example(20, 10)
+    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=T)
 })
 
 
