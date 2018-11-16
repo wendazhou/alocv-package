@@ -17,7 +17,7 @@ t2 <- proc.time() - s2
 
 s1 <- proc.time()
 sy <- mean((y - mean(y)) ^ 2)
-alo1 <- alocv::alo_enet_rcpp(x, as.matrix(fitted$beta), y,
+alo1 <- alocv:::alo_enet_rcpp(x, as.matrix(fitted$beta), y,
                              lambda = fitted$lambda * (n / sy),
                              alpha = 0.5, has_intercept = F,
                              use_rfp = T)

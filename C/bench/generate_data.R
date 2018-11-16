@@ -33,7 +33,7 @@ X <- matrix(rnorm(n * p, sd = 1 / sqrt(n)), nrow=n, ncol=p)
 beta <- matrix(rnorm(p) * rbinom(p, 1, 0.2), ncol=1)
 y <- config$rng(config$link(X %*% beta))
 
-fitted <- glmnet::glmnet(X, y, family = family)
+fitted <- glmnet::glmnet(X, y, family = family, alpha=0.9)
 
 out_file <- file(out_name, "wb")
 

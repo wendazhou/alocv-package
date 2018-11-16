@@ -386,5 +386,5 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
 
     blas_free(y_fitted);
     blas_free(L);
-    //blas_free(XE);
+    blas_free(XE);
 }

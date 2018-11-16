@@ -13,8 +13,6 @@ List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, bool has_
     lasso_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A[0], A.nrow(),
                         &B[0], B.nrow(), &y[0], 1, 1e-5, &alo[0], &leverage[0]);
 
-    Rcpp::Rcout << "Done with computation" << std::endl;
-
     return Rcpp::List::create(
 		Rcpp::Named("alo") = alo,
 		Rcpp::Named("leverage") = leverage
