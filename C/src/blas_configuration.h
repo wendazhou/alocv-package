@@ -38,21 +38,21 @@
 #endif
 
 #ifdef USE_MKL
-inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(size_t alignment, size_t size) {
     return mkl_malloc(size, alignment);
 }
 
-inline void blas_free(void* ptr) {
+static inline void blas_free(void* ptr) {
     mkl_free(ptr);
 }
 #elif MATLAB_MEX_FILE
 #include "mex.h"
 
-inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(size_t alignment, size_t size) {
     return mxMalloc(size);
 }
 
-inline void blas_free(void* ptr) {
+static inline void blas_free(void* ptr) {
     mxFree(ptr);
 }
 #else
@@ -61,22 +61,22 @@ inline void blas_free(void* ptr) {
 
 // on windows use platform-specific _aligned_malloc
 #include <malloc.h>
-inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(size_t alignment, size_t size) {
     return _aligned_malloc(size, alignment);
 }
 
-inline void blas_free(void* ptr) {
+static inline void blas_free(void* ptr) {
     return _aligned_free(ptr);
 }
 
 #else // _WIN32 || _WIN64
 #include <stdlib.h>
 
-inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(size_t alignment, size_t size) {
     return aligned_alloc(alignment, alignment * (size + alignment - 1) / alignment);
 }
 
-inline void blas_free(void* ptr) {
+static inline void blas_free(void* ptr) {
     free(ptr);
 }
 #endif // _WIN32 || _WIN64

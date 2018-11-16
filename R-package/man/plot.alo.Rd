@@ -4,7 +4,7 @@
 \alias{plot.alo}
 \title{Plots information for the given ALO evaluation.}
 \usage{
-\method{plot}{alo}(alo)
+\method{plot}{alo}(x, ...)
 }
 \description{
 Plots information for the given ALO evaluation.

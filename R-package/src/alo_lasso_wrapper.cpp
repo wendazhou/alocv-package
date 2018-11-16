@@ -13,10 +13,12 @@ List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, bool has_
     lasso_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A[0], A.nrow(),
                         &B[0], B.nrow(), &y[0], 1, 1e-5, &alo[0], &leverage[0]);
 
-    List result;
-    result["alo"] = alo;
-    result["leverage"] = leverage;
-    return result;
+    Rcpp::Rcout << "Done with computation" << std::endl;
+
+    return Rcpp::List::create(
+		Rcpp::Named("alo") = alo,
+		Rcpp::Named("leverage") = leverage
+    );
 }
 
 // [[Rcpp::export]]
@@ -36,10 +38,10 @@ List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y,
                        use_rfp, tolerance,
                        &alo[0], &leverage[0], &alo_mse[0], &alo_mae[0]);
 
-    List result;
-    result["alo"] = alo;
-    result["leverage"] = leverage;
-    result["alo_mse"] = alo_mse;
-    result["alo_mae"] = alo_mae;
-    return result;
+	return Rcpp::List::create(
+		Rcpp::Named("alo") = alo,
+		Rcpp::Named("leverage") = leverage,
+		Rcpp::Named("alo_mse") = alo_mse,
+		Rcpp::Named("alo_mae") = alo_mae
+	);
 }
