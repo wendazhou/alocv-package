@@ -5,3 +5,6 @@ PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 SOURCES = alocv/cholesky_utils.c alocv/alo_lasso.cpp alocv/alo_enet.cpp alocv/gram_utils.cpp
 OBJECTS = alocv/cholesky_utils.o alocv/alo_lasso.o alocv/alo_enet.o alocv/gram_utils.o RcppExports.o alo_lasso_wrapper.o
+
+clean:
+	rm -f $(OBJECTS)

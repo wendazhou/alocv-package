@@ -9,5 +9,7 @@ Encoding: UTF-8
 LazyData: true
 Suggests: testthat
 LinkingTo: Rcpp
-Imports: Rcpp
+Imports:
+    Rcpp,
+    glmnet
 RoxygenNote: 6.1.1

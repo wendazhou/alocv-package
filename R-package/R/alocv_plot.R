@@ -3,8 +3,8 @@
 #' Plots information for the given ALO evaluation.
 #'
 #' @export
-plot.alo <- function(alo) {
-    plot(log(alo$lambda), alo$alo,
+plot.alo <- function(x, ...) {
+    plot(log(x$lambda), x$alo,
          xlab='lambda',
          ylab='ALO risk')
 }

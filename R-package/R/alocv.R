@@ -43,7 +43,7 @@ alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
     }
 
     if(family == "gaussian") {
-        if(alpha == 1 && !has_intercept) {
+        if(alpha == 1 && !intercept) {
             alo <- alo_lasso_rcpp(x, beta, y, has_intercept=intercept)
         } else {
             alo <- alo_enet_rcpp(x, beta, y,
