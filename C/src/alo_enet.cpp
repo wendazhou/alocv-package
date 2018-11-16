@@ -361,7 +361,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
             compute_fitted(n, current_index.size(), XE, B + ldb * i, has_intercept ? a0[i] : 0.0,
                            has_intercept, current_index, y_fitted);
 
-            scale_predictors_glm(n, p, XE, n, y_fitted, family);
+            scale_predictors_glm(n, current_index.size(), XE, n, y_fitted, family);
 
             alo_elastic_net_rfp(
                 n, current_index.size(), XE, n, lambda[i], alpha, has_intercept,
