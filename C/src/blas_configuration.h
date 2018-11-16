@@ -1,19 +1,19 @@
 #ifndef WENDA_BLAS_CONFIGURATION_H_INCLUDED
 #define WENDA_BLAS_CONFIGURATION_H_INCLUDED
 
-#include "stddef.h"
+#include <stddef.h>
 
 #ifdef USE_MKL
 
 #define MKL_DIRECT_CALL
 
-#include "mkl.h"
-#include "mkl_blas.h"
-#include "mkl_lapack.h"
+#include <mkl.h>
+#include <mkl_blas.h>
+#include <mkl_lapack.h>
 
 #elif USE_R
-#include "R_ext/blas.h"
-#include "R_ext/lapack.h"
+#include <R_ext/BLAS.h>
+#include <R_ext/Lapack.h>
 
 // R may use F77 convention with additionall underscore at the end.
 // Redefine the functions so that we pick up the right names.
@@ -33,8 +33,8 @@
 #define ALOCV_LAPACK_NO_RFP
 
 #else
-#include "blas.h"
-#include "lapack.h"
+#include <blas.h>
+#include <lapack.h>
 #endif
 
 #ifdef USE_MKL
@@ -60,7 +60,7 @@ inline void blas_free(void* ptr) {
 #if defined(_WIN32) || defined(_WIN64)
 
 // on windows use platform-specific _aligned_malloc
-#include "malloc.h"
+#include <malloc.h>
 inline void* blas_malloc(size_t alignment, size_t size) {
     return _aligned_malloc(size, alignment);
 }
@@ -70,7 +70,7 @@ inline void blas_free(void* ptr) {
 }
 
 #else // _WIN32 || _WIN64
-#include "stdlib.h"
+#include <stdlib.h>
 
 inline void* blas_malloc(size_t alignment, size_t size) {
     return aligned_alloc(alignment, alignment * (size + alignment - 1) / alignment);
