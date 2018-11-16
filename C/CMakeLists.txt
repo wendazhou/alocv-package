@@ -12,7 +12,7 @@ find_library(mkl_tbb_thread NAMES mkl_tbb_thread libmkl_tbb_thread
              PATH_SUFFIXES mkl/lib/intel64)
 
 find_library(mkl_intel_lp64 NAMES mkl_intel_lp64 libmkl_intel_lp64
-             HINTS ENV ICPP_COMPILER18 ENV LIBRARY_PATH
+             HINTS ENV ICPP_COMPILER19 ENV LIBRARY_PATH
              PATH_SUFFIXES mkl/lib/intel64)
 
 find_library(intel_tbb NAMES tbb
@@ -31,7 +31,8 @@ message(STATUS "Found MKL headers: ${intel_mkl_include}")
 add_library(alocv STATIC src/cholesky_utils.c
                          src/alo_lasso.cpp
                          src/alo_enet.cpp
-                         src/gram_utils.cpp)
+                         src/gram_utils.cpp
+                         src/alo_svm.cpp)
 target_compile_definitions(alocv PUBLIC USE_MKL)
 target_include_directories(alocv PUBLIC include)
 target_include_directories(alocv PRIVATE src "${intel_mkl_include}")
@@ -44,7 +45,7 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
-        target_compile_options(alocv PRIVATE /permissive-)
+        target_compile_options(alocv PRIVATE /permissive- /Zc:__cplusplus /std:c++17)
     endif()
 endif()
 

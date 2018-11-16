@@ -87,6 +87,35 @@ void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, bla
 }
 
 
+void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format) {
+	const double one = 1.0;
+
+	if (format == SymmetricFormat::Full) {
+		dtrmm("L", "L", transa == MatrixTranspose::Identity ? "N" : "T", "N", &m, &n, &one, A, &m, B, &ldb);
+		return;
+	}
+
+	const bool is_odd = m % 2 == 1;
+	const blas_size ldar = is_odd ? m : m + 1;
+	const blas_size m1 = (m + 1) / 2;
+	const blas_size m2 = m - m1;
+
+	const double* L22 = A + (is_odd ? ldar : 0);
+	const double* L11 = A + (is_odd ? 0 : 1);
+	const double* L12 = A + m1 + (is_odd ? 0 : 1);
+
+	if (transa == MatrixTranspose::Identity) {
+		dtrmm("L", "U", "T", "N", &m2, &n, &one, L22, &ldar, B + m1, &ldb);
+		dgemm("N", "N", &m2, &n, &m1, &one, L12, &ldar, B, &ldb, &one, B + m1, &ldb);
+		dtrmm("L", "L", "N", "N", &m1, &n, &one, L11, &ldar, B, &ldb);
+	}
+	else {
+		dtrmm("L", "L", "T", "N", &m1, &n, &one, L11, &ldar, B, &ldb);
+		dgemm("T", "N", &m1, &n, &m2, &one, L12, &ldar, B + m1, &ldb, &one, B, &ldb);
+		dtrmm("L", "U", "N", "N", &m2, &n, &one, L22, &ldar, B + m1, &ldb);
+	}
+}
+
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {
         for(int i = skip_first; i < p; ++i) {

@@ -88,4 +88,23 @@ static inline void blas_free(void* ptr) {
 #include "rfp_shims.h"
 #endif
 
+#ifdef __cplusplus
+#include <memory>
+
+template<typename T>
+struct blas_deleter {
+	void operator()(T* ptr) const {
+		blas_free(ptr);
+	}
+};
+
+template<typename T>
+using unique_aligned_array = std::unique_ptr<T[], blas_deleter<T>>;
+
+template<typename T>
+unique_aligned_array<T> blas_unique_alloc(size_t alignment, size_t count) {
+	return unique_aligned_array<T>(static_cast<T*>(blas_malloc(alignment, count * sizeof(T))));
+}
+#endif
+
 #endif // WENDA_BLAS_CONFIGURATION_H_INCLUDED

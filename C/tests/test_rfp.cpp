@@ -142,21 +142,41 @@ TEST_CASE("Triangular Inverse Correct for RFP (odd)", "[RFP]") {
 
 namespace {
 
-bool increment_diag_correct(int n, bool skip_first) {
-    double* X = (double*)blas_malloc(16, n * n * sizeof(double));
-    double* X_rf = (double*)blas_malloc(16, n * (n + 1) * sizeof(double) / 2);
-
+std::pair<unique_aligned_array<double>, unique_aligned_array<double>> make_random_matrices(int n) {
+	auto X = blas_unique_alloc<double>(16, n * n);
+	auto X_rf = blas_unique_alloc<double>(16, n * (n + 1) / 2);
 
     int info;
 
-    std::generate_n(X, n * n, [counter=0]() mutable { return counter++;});
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			X[i * n + j] = std::sqrt(i) + std::sqrt(j);
+		}
+	}
 
-    dtrttf("N", "L", &n, X, &n, X_rf, &info);
+    dtrttf("N", "L", &n, X.get(), &n, X_rf.get(), &info);
+
+	return std::make_pair(std::move(X), std::move(X_rf));
+}
+
+bool increment_diag_correct(int n, bool skip_first) {
+	auto init_values = make_random_matrices(n);
+
+	auto X = init_values.first.get();
+	auto X_rf = init_values.second.get();
+
+	std::vector<double> initial_diagonal(n);
+
+	for (int i = 0; i < n; ++i) {
+		initial_diagonal[i] = X[i + n * i];
+	}
+
     offset_diagonal(n, X_rf, 3.5, skip_first, SymmetricFormat::RFP);
+	int info;
     dtfttr("N", "L", &n, X_rf, X, &n, &info);
 
     for(int i = skip_first ? 1 : 0; i < n; ++i) {
-        if(X[i + n * i] != i + n * i + 3.5) {
+        if(X[i + n * i] != initial_diagonal[i] + 3.5) {
             return false;
         }
     }
@@ -174,7 +194,7 @@ TEST_CASE("Offset Diagonal Correct for RFP (even)", "[RFP]") {
     REQUIRE(increment_diag_correct(6, false));
 }
 
-TEST_CASE("Offset Diganola Correct for RFP (odd)", "[RFP]") {
+TEST_CASE("Offset Diagonal Correct for RFP (odd)", "[RFP]") {
     REQUIRE(increment_diag_correct(5, false));
 }
 
@@ -182,6 +202,98 @@ TEST_CASE("Offset Diagonal with skip Correct for RFP (even)", "[RFP]") {
     REQUIRE(increment_diag_correct(6, true));
 }
 
-TEST_CASE("OFfset Diagonal with skip correct for RFP (odd)", "[RFP]") {
+TEST_CASE("Offset Diagonal with skip correct for RFP (odd)", "[RFP]") {
     REQUIRE(increment_diag_correct(5, true));
+}
+
+namespace {
+
+int test_diagonal_extract(int n) {
+	auto init_values = make_random_matrices(n);
+
+	auto X = init_values.first.get();
+	auto X_rf = init_values.second.get();
+
+	for (int i = 0; i < n; ++i) {
+		auto diag = diagonal_element(n, X_rf, i, SymmetricFormat::RFP);
+
+		if (diag != X[i + i * n]) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+}
+
+TEST_CASE("Extract Diagonal Element Correct for RFP (even)", "[RFP]") {
+	REQUIRE(test_diagonal_extract(4) == -1);
+}
+
+TEST_CASE("Extract Diagonal Element Correct for RFP (odd)", "[RFP]") {
+	REQUIRE(test_diagonal_extract(5) == -1);
+}
+
+
+namespace {
+
+unique_aligned_array<double> make_rectangular_matrix(int n, int m) {
+	auto X = blas_unique_alloc<double>(16, n * m);
+	std::generate(X.get(), X.get() + n * m, [counter = 0]() mutable { return counter++;  });
+
+	return X;
+}
+
+std::pair<unique_aligned_array<double>, unique_aligned_array<double>> compute_triangular_multiplication(int n, int m, bool trans) {
+	auto init_triangular = make_random_matrices(n);
+	auto rhs = make_rectangular_matrix(n, m);
+	auto rhs2 = make_rectangular_matrix(n, m);
+
+	auto lhs_full = init_triangular.first.get();
+	auto lhs_rfp = init_triangular.second.get();
+
+	auto transa = trans ? MatrixTranspose::Transpose : MatrixTranspose::Identity;
+
+	triangular_multiply(transa, n, m, lhs_full, rhs.get(), n, SymmetricFormat::Full);
+	triangular_multiply(transa, n, m, lhs_rfp, rhs2.get(), n, SymmetricFormat::RFP);
+
+	return std::make_pair(std::move(rhs), std::move(rhs2));
+}
+
+}
+
+TEST_CASE("Triangular Matrix Multiply Correct for RFP (even)", "[RFP]") {
+	auto results = compute_triangular_multiplication(6, 4, false);
+
+	for (int i = 0; i < 24; ++i) {
+		REQUIRE(results.first[i] == Approx(results.second[i]));
+	}
+}
+
+
+TEST_CASE("Triangular Matrix Multiply Correct for RFP (odd)", "[RFP]") {
+	auto results = compute_triangular_multiplication(5, 4, false);
+
+	for (int i = 0; i < 20; ++i) {
+		REQUIRE(results.first[i] == Approx(results.second[i]));
+	}
+}
+
+
+TEST_CASE("Triangular Matrix Multiply Correct for RFP (even / T)", "[RFP]") {
+	auto results = compute_triangular_multiplication(6, 4, true);
+
+	for (int i = 0; i < 24; ++i) {
+		REQUIRE(results.first[i] == Approx(results.second[i]));
+	}
+}
+
+
+TEST_CASE("Triangular Matrix Multiply Correct for RFP (odd / T)", "[RFP]") {
+	auto results = compute_triangular_multiplication(5, 4, true);
+
+	for (int i = 0; i < 20; ++i) {
+		REQUIRE(results.first[i] == Approx(results.second[i]));
+	}
 }
