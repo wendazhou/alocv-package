@@ -31,7 +31,11 @@ test_that("alocv correct for pure lasso", {
 
 test_that("alocv correct for pure lasso with intercept", {
     df <- make_example(20, 10)
-    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=T)
+    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10)
+
+    expected_alo <- c(8.83262606, 3.96686767, 0.69026271, 0.13926358, 0.04274022, 0.06060158)
+
+    expect_equal(fitted$alo, expected_alo)
 })
 
 
@@ -113,9 +117,14 @@ make_example_poisson <- function(n, p, eps=0.5, seed=42) {
 
 test_that("alocv correct for poisson enet", {
     data <- make_example_poisson(20, 10)
-    fitted <- alo.glmnet(data$x, data$y, alpha=1, family="poisson", standardize=F, intercept=F)
+    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="poisson",
+                         standardize=F, intercept=F, nlambda=10)
 
-    fail("Implement the test")
+    expected_alo <- c(
+        1048.6500, 1026.8649, 876.6960, 678.7976, 596.0793, 426.0430,
+        110.0069, 2423.5604, 3020.3248, 3038.5616)
+
+    expect_equal(fitted$alo, expected_alo)
 })
 
 
@@ -130,26 +139,29 @@ make_example_logit <- function(n, p, eps=0.5, seed=42) {
     data
 }
 
-test_that("alocv correct for logistic glmnet", {
-    data <- make_example_logit(20, 10)
+test_that("alocv correct for logistic glmnet no standardize", {
+    data <- make_example_logit(50, 10)
 
     fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="binomial",
-                         standardize=F, intercept=F)
+                         standardize=F, intercept=F, nlambda = 10)
 
     expected_alo <- c(
-        0.5000000, 0.5008197, 0.4832313, 0.4658903, 0.4489157, 0.4501271, 0.4266685, 0.4044677,
-        0.3835941, 0.3640841, 0.3459446, 0.3498814, 0.3316800, 0.3150124, 0.2997912, 0.3101168,
-        0.2924729, 0.2977392, 0.2817270, 0.2671771, 0.2878570, 0.3174037, 0.3054467, 0.2912450,
-        0.2811169, 0.2727367, 0.3206239, 0.3162197, 0.3133249, 0.3117248, 0.3112081, 0.3370961,
-        0.3385782, 0.3408007, 0.3434980, 0.3464321, 0.3493881, 0.3521776, 0.3546513, 0.3567022,
-        0.4145513, 0.4148842, 0.4152576, 0.4156833, 0.4161533, 0.4166599, 0.4171959, 0.4177549,
-        0.4183305, 0.4190674, 0.4196724, 0.4202660, 0.4208523, 0.4214280, 0.4219893, 0.4225331,
-        0.4230568, 0.4235586, 0.4240371, 0.4244918, 0.4248838, 0.4252942, 0.4256778, 0.4260883,
-        0.4262935, 0.4267560, 0.4269140, 0.4271998, 0.4274764, 0.4277375, 0.4278542, 0.4280874,
-        0.4283244, 0.4285533, 0.4287759, 0.4289947, 0.4292115, 0.4294277, 0.4296443, 0.4298624,
-        0.4300830, 0.4303070, 0.4303690, 0.4305701, 0.4308113, 0.4310638, 0.4313224, 0.4315879,
-        0.4318614, 0.4321444, 0.4324379, 0.4327429, 0.4330603, 0.4333910, 0.4337357, 0.4339909,
-        0.4342980, 0.4346735, 0.4350841, 0.4355168)
+        0.5000000, 0.4245442, 0.3758924, 0.4097286, 0.4408108, 0.4515035,
+        0.4567730, 0.4850738, 0.4861418, 0.4865248)
 
-    expect_equal(fitted$alo, expected_alo)
+    expect_equal(fitted$alo_mse, expected_alo, tolerance=1e-6)
+})
+
+
+test_that("alocv correct for logistic glmnet with standardize", {
+    data <- make_example_logit(50, 10)
+
+    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="binomial",
+                         standardize=T, intercept=F, nlambda = 10)
+
+    expected_alo <- c(
+        0.5000000, 0.4168007, 0.4052387, 0.4130048, 0.4437558,
+        0.4529238, 0.4573545, 0.4853284, 0.4862312, 0.4865597)
+
+    expect_equal(fitted$alo_mse, expected_alo, tolerance=1e-6)
 })
