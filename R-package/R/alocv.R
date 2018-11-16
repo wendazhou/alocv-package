@@ -6,6 +6,7 @@
 #' @name alocv
 #' @useDynLib alocv
 #' @importFrom Rcpp sourceCpp
+#' @importFrom graphics plot
 NULL
 
 

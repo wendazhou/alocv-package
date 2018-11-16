@@ -3,4 +3,5 @@
 S3method(plot,alo)
 export(alo.glmnet)
 importFrom(Rcpp,sourceCpp)
+importFrom(graphics,plot)
 useDynLib(alocv)
