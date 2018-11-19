@@ -63,6 +63,20 @@ void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, bla
 void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format);
 
 
+/*! Copies a column from a given symmetric or triangular matrix in RFP format to the destination pointer.
+ *
+ * @param n: The size of the matrix A.
+ * @param A: The matrix to copy from.
+ * @param k: The index of the column to copy.
+ * @param B: The array to copy the column of A to.
+ * @param format: The format of A.
+ * @param is_symmetric: If true, indicates that A represents a symmetric matrix, otherwise indicates that A
+ *						represents a triangular matrix.
+ *
+ */
+inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa, SymmetricFormat format);
+
+
 /*! Adds the given value to the diagonal of the matrix (represented in the specified format).
  *
  * If specified, this function will not increment the top-left element of the matrix.
@@ -76,6 +90,13 @@ void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format);
 
 
+/*!  Gets the given diagonal element from a matrix in the RFP format.
+ * @param p: The size of the matrix.
+ * @param L: The matrix in the given format.
+ * @param index: The index of the diagonal element to obtain.
+ * @param format: The format of the given matrix.
+ *
+ */
 inline double diagonal_element(blas_size p, double* L, blas_size index, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {
         return L[index + p * index];
@@ -102,6 +123,60 @@ inline double diagonal_element(blas_size p, double* L, blas_size index, Symmetri
             return L[index + ldl * (index + col_offset)];
         }
     }
+}
+
+template<typename ItS, typename ItD>
+void strided_copy(ItS first, ItS end, ItD dest, blas_size stride_in, blas_size stride_out) {
+	while (first < end) {
+		*dest = *first;
+		first += stride_in;
+		dest += stride_out;
+	}
+}
+
+#include <algorithm>
+
+inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa, SymmetricFormat format) {
+	if (format == SymmetricFormat::Full) {
+		if (transa == MatrixTranspose::Identity) {
+			std::copy(A + k * n + k, A + k * n + n, B + k);
+		}
+		else {
+			strided_copy(A + k * n + k, A + n * (n - 1) + k, B, n, 1);
+		}
+
+		return;
+	}
+
+	bool is_odd = n % 2 == 1;
+	blas_size n1 = (n + 1) / 2;
+	blas_size n2 = n - n1;
+	blas_size ldar = is_odd ? n : n + 1;
+
+	if (transa == MatrixTranspose::Identity) {
+		if (k < n1) {
+			blas_size offset = is_odd ? 0 : 1;
+			std::copy(A + k * ldar + k + offset, A + k * ldar + n + offset, B + k);
+		}
+		else {
+			blas_size offset = is_odd ? 1 : 0;
+			strided_copy(A + (k - n1 + offset) * ldar + (k - n1), A + n1 * ldar + (k - n1), B + k, ldar, 1);
+		}
+	}
+	else {
+
+		{
+			blas_size offset = is_odd ? 0 : 1;
+			strided_copy(A + k + offset, A + k + offset + std::min(k + 1, n1) * ldar, B, ldar, 1);
+		}
+
+		if (k >= n1) {
+			// copy stragglers
+			blas_size offset = is_odd ? 1 : 0;
+			auto first = A + (k - n1 + offset) * ldar;
+			std::copy(first, first + (k - n1 + 1), B + n1);
+		}
+	}
 }
 
 #endif // WENDA_GRAM_UTILS_H_INCLUDED

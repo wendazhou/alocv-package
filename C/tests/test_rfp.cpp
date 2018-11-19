@@ -142,14 +142,18 @@ TEST_CASE("Triangular Inverse Correct for RFP (odd)", "[RFP]") {
 
 namespace {
 
-std::pair<unique_aligned_array<double>, unique_aligned_array<double>> make_random_matrices(int n) {
+std::pair<unique_aligned_array<double>, unique_aligned_array<double>> make_random_matrices(int n, bool triangular=false) {
 	auto X = blas_unique_alloc<double>(16, n * n);
 	auto X_rf = blas_unique_alloc<double>(16, n * (n + 1) / 2);
 
     int info;
 
 	for (int i = 0; i < n; ++i) {
-		for (int j = 0; j < n; ++j) {
+		if (triangular) {
+			std::fill(X.get() + i * n, X.get() + i * n + i, 0.0);
+		}
+
+		for (int j = triangular ? i : 0; j < n; ++j) {
 			X[i * n + j] = std::sqrt(i) + std::sqrt(j);
 		}
 	}
@@ -296,4 +300,87 @@ TEST_CASE("Triangular Matrix Multiply Correct for RFP (odd / T)", "[RFP]") {
 	for (int i = 0; i < 20; ++i) {
 		REQUIRE(results.first[i] == Approx(results.second[i]));
 	}
+}
+
+
+namespace {
+
+std::pair<std::vector<double>, std::vector<double>> test_copy(int n, int k) {
+	auto init_triangular = make_random_matrices(n, true);
+
+	auto lhs_full = init_triangular.first.get();
+	auto lhs_rfp = init_triangular.second.get();
+
+	std::vector<double> my_copy(n);
+	std::fill(my_copy.begin(), my_copy.end(), 0.0);
+
+	copy_column(n, lhs_rfp, k, my_copy.data(), MatrixTranspose::Identity, SymmetricFormat::RFP);
+
+	return std::make_pair(std::move(my_copy), std::vector<double>(lhs_full + k * n, lhs_full + k * n + n));
+}
+
+std::pair<std::vector<double>, std::vector<double>> test_copy_transpose(int n, int k) {
+	auto init_triangular = make_random_matrices(n, true);
+
+	auto lhs_full = init_triangular.first.get();
+	auto lhs_rfp = init_triangular.second.get();
+
+	std::vector<double> my_copy(n, 0.0);
+	std::vector<double> reference(n, 0.0);
+
+	copy_column(n, lhs_rfp, k, my_copy.data(), MatrixTranspose::Transpose, SymmetricFormat::RFP);
+	strided_copy(lhs_full + k, lhs_full + k + n * n, reference.begin(), n, 1);
+
+	return std::make_pair(std::move(my_copy), std::move(reference));
+}
+
+}
+
+
+TEST_CASE("Copy Column Correct for RFP (even / first)", "[RFP]") {
+	auto result = test_copy(4, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (even / second)", "[RFP]") {
+	auto result = test_copy(4, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / first)", "[RFP]") {
+	auto result = test_copy(5, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / second)", "[RFP]") {
+	auto result = test_copy(5, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (even / first / transpose)", "[RFP]") {
+	auto result = test_copy_transpose(4, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (even / second / transpose)", "[RFP]") {
+	auto result = test_copy_transpose(4, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / first / transpose)", "[RFP]") {
+	auto result = test_copy_transpose(5, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / second / transpose)", "[RFP]") {
+	auto result = test_copy_transpose(5, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
 }

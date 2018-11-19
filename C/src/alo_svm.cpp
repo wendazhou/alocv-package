@@ -120,10 +120,10 @@ void svm_compute_alo(blas_size n, const double* K, blas_size ldk, const double* 
     dtfsm("N", "L", "L", "N", "N", &n, &nv, &one, kchol, kv, &n);
 
     // k_io contains KI = (K_v^T K^{-1} K_V)
-    dsfrk("N", "L", "T", &nv, &n, &one, kv, &n, &zero, k_io);
+	compute_gram(n, nv, kv, n, k_io, SymmetricFormat::RFP);
 
     // k_io now contains its cholesky decomposition
-    dpftrf("N", "L", &nv, k_io, &info);
+	compute_cholesky(nv, k_io, SymmetricFormat::RFP);
 
     // kv now contains L_K^{-1} K_v L_I^{-1}^T
     dtfsm("N", "R", "L", "T", "N", &n, &nv, &one, k_io, kv, &n);
