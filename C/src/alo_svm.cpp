@@ -10,16 +10,11 @@
 
 namespace {
 
-void svm_compute_gsub_impl(blas_size n, blas_size nv, const double* kv,
+void svm_compute_gsub_impl(blas_size n, blas_size nv, double* kv,
                            const double* K, blas_size ldk, const double* y,
                            const std::vector<blas_size>& s_idx, const std::vector<blas_size>& v_idx,
 						   double* g_sub, double* g_temp) {
-    double* kv2 = static_cast<double*>(blas_malloc(16, n * nv * sizeof(double)));
-
     blas_size one_i = 1;
-
-    // create a second copy in kv2 (needed for solving linear system).
-    std::copy(kv, kv + n * nv, kv2);
 
     double temp_size;
     blas_size info;
@@ -31,25 +26,67 @@ void svm_compute_gsub_impl(blas_size n, blas_size nv, const double* kv,
         daxpy(&n, y + i, K + i * ldk, &one_i, g_temp, &one_i);
     }
 
-    dgels("N", &n, &nv, &one_i, kv2, &n, g_temp, &n, &temp_size, &min_one_i, &info);
+    dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, &temp_size, &min_one_i, &info);
 
     blas_size work_size = static_cast<blas_size>(temp_size);
     double* work = static_cast<double*>(blas_malloc(16, work_size * sizeof(double)));
 
-    dgels("N", &n, &nv, &one_i, kv2, &n, g_temp, &n, work, &work_size, &info);
+    dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, work, &work_size, &info);
 
     blas_free(work);
-    blas_free(kv2);
 
     for(blas_size i = 0; i < v_idx.size(); ++i) {
         g_sub[v_idx[i]] = g_temp[i];
     }
 }
 
+
+void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, double* kks,
+						const std::vector<blas_size>& v_idx, const std::vector<blas_size>& s_idx,
+	                    double* a_slack, double lambda) {
+	auto tau_storage = blas_unique_alloc<double>(16, nv);
+	auto tau = tau_storage.get();
+
+	blas_size min_one_i = -1;
+	blas_size lwork = -1;
+	blas_size info;
+	double work_size;
+
+	dgeqrf(&n, &nv, kkv, &n, tau, &work_size, &min_one_i, &info);
+	lwork = static_cast<blas_size>(work_size);
+	auto work_storage = blas_unique_alloc<double>(16, lwork);
+	auto work = work_storage.get();
+
+	dgeqrf(&n, &nv, kkv, &n, tau, work, &lwork, &info);
+
+	{
+		blas_size one_i = 1;
+		for(blas_size i = 0; i < ns; ++i) {
+			a_slack[s_idx[i]] = ddot(&n, kks + i * n, &one_i, kks + i * n, &one_i) / lambda;
+		}
+
+		dormqr("L", "T", &n, &ns, &nv, kkv, &n, tau, kks, &n, work, &lwork, &info);
+
+		for(blas_size i = 0; i < ns; ++i) {
+			a_slack[s_idx[i]] -= ddot(&nv, kks + i * n, &one_i, kks + i * n, &one_i) / lambda;
+		}
+	}
+
+	{
+		dtrtri("U", "N", &nv, kkv, &n, &info);
+
+		for (blas_size i = 0; i < nv; ++i) {
+			blas_size num_elements = nv - i;
+			auto start = kkv + i + i * n;
+			a_slack[v_idx[i]] = 1 / (lambda * ddot(&num_elements, start, &n, start, &n));
+		}
+	}
+}
+
 }
 
 
-void svm_compute_alo(blas_size n, const double* K, blas_size ldk, const double* y, const double* alpha,
+void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
                      double rho, double lambda, double tol, double* alo_predicted, double* alo_mse) {
     double* y_pred = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* y_hat = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
@@ -62,7 +99,7 @@ void svm_compute_alo(blas_size n, const double* K, blas_size ldk, const double* 
     double zero = 0.0;
 
     // we compute K * alpha in y_pred
-    dsymv("L", &n, &one, K, &ldk, alpha, &one_i, &zero, y_pred, &one_i);
+    dsymv("L", &n, &one, K, &n, alpha, &one_i, &zero, y_pred, &one_i);
 
     // a_slack will contain -lambda * y_hat
     std::transform(y_pred, y_pred + n, a_slack, [=](double x) { return -x * lambda; });
@@ -94,71 +131,39 @@ void svm_compute_alo(blas_size n, const double* K, blas_size ldk, const double* 
 
     // copy the respective columns of K into matrix.
     for(blas_size i = 0; i < nv; ++i) {
-        std::copy(K + v_idx[i] * ldk, K + v_idx[i] * ldk + n, kv + i * n);
+        std::copy(K + v_idx[i] * n, K + v_idx[i] * n + n, kv + i * n);
     }
 
     std::fill(g_sub, g_sub + n, 0.0);
-    svm_compute_gsub_impl(n, nv, kv, K, ldk, y, s_idx, v_idx, g_sub, a_slack);
+    svm_compute_gsub_impl(n, nv, kv, K, n, y, s_idx, v_idx, g_sub, a_slack);
     for(auto i : s_idx) {
         g_sub[i] = -y[i];
     }
 
     double* ks = static_cast<double*>(blas_malloc(16, n * ns * sizeof(double)));
-    double* k_io = static_cast<double*>(blas_malloc(16, n * (n + 1) / 2 * sizeof(double)));
     double* kchol = static_cast<double*>(blas_malloc(16, n * (n + 1) / 2 * sizeof(double)));
 
     for(blas_size i = 0; i < s_idx.size(); ++i) {
-        std::copy(K + s_idx[i] * ldk, K + s_idx[i] * ldk + n, ks + i * n);
+        std::copy(K + s_idx[i] * n, K + s_idx[i] * n + n, ks + i * n);
     }
 
-    // compute cholesky decomposition of K into kchol (in RFP format)
-    int info;
-    dtrttf("N", "L", &n, K, &ldk, kchol, &info);
-    dpftrf("N", "L", &n, kchol, &info);
+    // compute cholesky decomposition of K
+	compute_cholesky(n, K, SymmetricFormat::Full);
 
-    // kv now contains L_K^{-1} K_V
-    dtfsm("N", "L", "L", "N", "N", &n, &nv, &one, kchol, kv, &n);
+    // kv now contains L_K^{-1} K_V = L_K^T[,V]
+	std::fill(kv, kv + nv * n, 0.0);
+	for (blas_size i = 0; i < nv; ++i) {
+		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Transpose, SymmetricFormat::Full);
+	}
 
-    // k_io contains KI = (K_v^T K^{-1} K_V)
-	compute_gram(n, nv, kv, n, k_io, SymmetricFormat::RFP);
+	// similarly, ks now contains L_K^{-1} K_S = L_K^T[,S]
+	std::fill(ks, ks + ns * n, 0.0);
+	for (blas_size i = 0; i < ns; ++i) {
+		copy_column(n, K, s_idx[i], ks + i * n, MatrixTranspose::Transpose, SymmetricFormat::Full);
+	}
 
-    // k_io now contains its cholesky decomposition
-	compute_cholesky(nv, k_io, SymmetricFormat::RFP);
+	svm_compute_a_impl(n, nv, ns, kv, ks, v_idx, s_idx, a_slack, lambda);
 
-    // kv now contains L_K^{-1} K_v L_I^{-1}^T
-    dtfsm("N", "R", "L", "T", "N", &n, &nv, &one, k_io, kv, &n);
-
-	// k_io now contains its inverse
-	dpftri("N", "L", &nv, k_io, &info);
-
-    // we make use of the fact that we have KI to compute a_slack for indices in V
-    for(blas_size i = 0; i < nv; ++i) {
-        a_slack[v_idx[i]] = 1 / (lambda * diagonal_element(nv, k_io, i, SymmetricFormat::RFP));
-    }
-
-    // we replace k_io with K^{-1/2}K_V KI^{-1} K_V K^{-1/2}
-    dsfrk("N", "L", "N", &n, &nv, &one, kv, &n, &zero, k_io);
-
-	// offset diagonal slightly for stability.
-	offset_diagonal(n, k_io, 1e-15, false, SymmetricFormat::RFP);
-
-    // compute the cholesky decomposition
-    compute_cholesky(n, k_io, SymmetricFormat::RFP);
-
-    // compute a for the indices in S
-	dtfsm("N", "L", "L", "N", "N", &n, &ns, &one, kchol, ks, &n);
-
-    for(blas_size i = 0; i < ns; ++i) {
-        a_slack[s_idx[i]] = ddot(&n, ks, &ns, ks, &ns) / lambda;
-    }
-
-	triangular_multiply(MatrixTranspose::Transpose, n, ns, k_io, ks, n, SymmetricFormat::RFP);
-
-    for(blas_size i = 0; i < ns; ++i) {
-        a_slack[s_idx[i]] -= ddot(&n, ks, &ns, ks, &ns) / lambda;
-    }
-
-    blas_free(k_io);
     blas_free(kv);
     blas_free(ks);
 

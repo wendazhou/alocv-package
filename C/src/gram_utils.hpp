@@ -142,7 +142,7 @@ inline void copy_column(blas_size n, const double* A, blas_size k, double* B, Ma
 			std::copy(A + k * n + k, A + k * n + n, B + k);
 		}
 		else {
-			strided_copy(A + k * n + k, A + n * (n - 1) + k, B, n, 1);
+			strided_copy(A + k, A + k * n + k + 1, B, n, 1);
 		}
 
 		return;

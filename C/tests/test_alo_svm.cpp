@@ -12,8 +12,10 @@ TEST_CASE("ALO SVM Correct", "[SVM]") {
 
     double alo_hinge;
     double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+	auto k_copy = blas_unique_alloc<double>(16, std::size(K));
+	std::copy(K, K + std::size(K), k_copy.get());
 
-    svm_compute_alo(n, K, n, y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge);
+    svm_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge);
 
     REQUIRE(alo_hinge == Approx(expected_hinge));
 

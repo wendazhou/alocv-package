@@ -102,7 +102,7 @@ template<typename T>
 using unique_aligned_array = std::unique_ptr<T[], blas_deleter<T>>;
 
 template<typename T>
-unique_aligned_array<T> blas_unique_alloc(size_t alignment, size_t count) {
+unique_aligned_array<T> blas_unique_alloc(size_t alignment, size_t count) noexcept {
 	return unique_aligned_array<T>(static_cast<T*>(blas_malloc(alignment, count * sizeof(T))));
 }
 #endif
