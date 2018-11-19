@@ -35,7 +35,7 @@ void svm_compute_gsub_impl(blas_size n, blas_size nv, double* kv,
 
     blas_free(work);
 
-    for(blas_size i = 0; i < v_idx.size(); ++i) {
+    for(blas_size i = 0; i < nv; ++i) {
         g_sub[v_idx[i]] = g_temp[i];
     }
 }
@@ -95,7 +95,6 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 
     blas_size one_i = 1;
     double one = 1.0;
-    double min_one = -1.0;
     double zero = 0.0;
 
     // we compute K * alpha in y_pred
@@ -111,7 +110,7 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 	std::copy(y_pred, y_pred + n, y_hat);
 
     // y_pred will contain y * y_hat
-    std::transform(y_pred, y_pred + n, y, y_pred, std::multiplies<>{});
+    std::transform(y_pred, y_pred + n, y, y_pred, std::multiplies<double>{});
 
     std::vector<blas_size> v_idx;
     std::vector<blas_size> s_idx;
@@ -141,9 +140,8 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     }
 
     double* ks = static_cast<double*>(blas_malloc(16, n * ns * sizeof(double)));
-    double* kchol = static_cast<double*>(blas_malloc(16, n * (n + 1) / 2 * sizeof(double)));
 
-    for(blas_size i = 0; i < s_idx.size(); ++i) {
+    for(blas_size i = 0; i < ns; ++i) {
         std::copy(K + s_idx[i] * n, K + s_idx[i] * n + n, ks + i * n);
     }
 
@@ -168,10 +166,10 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     blas_free(ks);
 
     // a_slack now contains a * g
-    std::transform(a_slack, a_slack + n, g_sub, a_slack, std::multiplies<>{});
+    std::transform(a_slack, a_slack + n, g_sub, a_slack, std::multiplies<double>{});
 
     if(alo_predicted) {
-        std::transform(a_slack, a_slack + n, y_hat, alo_predicted, std::plus<>{});
+        std::transform(a_slack, a_slack + n, y_hat, alo_predicted, std::plus<double>{});
     }
 
     if(alo_mse) {

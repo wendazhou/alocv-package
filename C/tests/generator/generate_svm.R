@@ -145,4 +145,3 @@ text <- values_to_c(
 f <- file('../examples/svm_example.in')
 writeLines(text, f)
 close(f)
-

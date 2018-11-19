@@ -25,9 +25,15 @@
 #define dcopy F77_CALL(dcopy)
 #define dgemm F77_CALL(dgemm)
 #define dtrsm F77_CALL(dtrsm)
+#define dtrmm F77_CALL(dtrmm)
 #define ddot F77_CALL(ddot)
 #define dgemv F77_CALL(dgemv)
+#define dsymv F77_CALL(dsymv)
 #define dpotrf F77_CALL(dpotrf)
+#define dgels F77_CALL(dgels)
+#define dgeqrf F77_CALL(dgeqrf)
+#define dormqr F77_CALL(dormqr)
+#define dtrtri F77_CALL(dtrtri)
 #define dsyrk F77_CALL(dsyrk)
 
 #define ALOCV_LAPACK_NO_RFP
