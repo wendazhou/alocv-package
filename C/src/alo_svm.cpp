@@ -130,7 +130,7 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 
     // copy the respective columns of K into matrix.
     for(blas_size i = 0; i < nv; ++i) {
-        std::copy(K + v_idx[i] * n, K + v_idx[i] * n + n, kv + i * n);
+		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Identity, SymmetricFormat::Full, true);
     }
 
     std::fill(g_sub, g_sub + n, 0.0);
@@ -140,10 +140,6 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     }
 
     double* ks = static_cast<double*>(blas_malloc(16, n * ns * sizeof(double)));
-
-    for(blas_size i = 0; i < ns; ++i) {
-        std::copy(K + s_idx[i] * n, K + s_idx[i] * n + n, ks + i * n);
-    }
 
     // compute cholesky decomposition of K
 	compute_cholesky(n, K, SymmetricFormat::Full);

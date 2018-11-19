@@ -334,8 +334,22 @@ std::pair<std::vector<double>, std::vector<double>> test_copy_transpose(int n, i
 	return std::make_pair(std::move(my_copy), std::move(reference));
 }
 
+std::pair< std::vector<double>, std::vector<double>> test_copy_symmetric(int n, int k) {
+	auto init_symmetric = make_random_matrices(n);
+
+	auto lhs_full = init_symmetric.first.get();
+	auto lhs_rfp = init_symmetric.second.get();
+
+	std::vector<double> my_copy(n, 0.0);
+	std::vector<double> reference(n, 0.0);
+
+	copy_column(n, lhs_rfp, k, my_copy.data(), MatrixTranspose::Identity, SymmetricFormat::RFP, true);
+	std::copy(lhs_full + k * n, lhs_full + k * n + n, reference.begin());
+
+	return std::make_pair(std::move(my_copy), std::move(reference));
 }
 
+}
 
 TEST_CASE("Copy Column Correct for RFP (even / first)", "[RFP]") {
 	auto result = test_copy(4, 1);
@@ -383,4 +397,44 @@ TEST_CASE("Copy Column Correct for RFP (odd / second / transpose)", "[RFP]") {
 	auto result = test_copy_transpose(5, 3);
 
 	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / first / symm", "[RFP]") {
+	auto result = test_copy_symmetric(5, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (odd / second / symm", "[RFP]") {
+	auto result = test_copy_symmetric(5, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (even / first / symm", "[RFP]") {
+	auto result = test_copy_symmetric(4, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for RFP (even / second / symm", "[RFP]") {
+	auto result = test_copy_symmetric(4, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Column Correct for Full Symmetric", "[RFP]") {
+	blas_size n = 5;
+	blas_size k = 2;
+
+	auto init_symmetric = make_random_matrices(n);
+
+	auto lhs_full = init_symmetric.first.get();
+	auto lhs_rfp = init_symmetric.second.get();
+
+	std::vector<double> my_copy(n, 0.0);
+
+	copy_column(n, lhs_full, k, my_copy.data(), MatrixTranspose::Identity, SymmetricFormat::RFP, true);
+
+	REQUIRE_THAT(my_copy, Catch::Matchers::Equals(std::vector<double>(lhs_full + k * n, lhs_full + k * n + n)));
 }

@@ -116,6 +116,17 @@ void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const
 	}
 }
 
+
+void symmetric_multiply(blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format) {
+	const double one = 1.0;
+	const double zero = 0.0;
+
+	if (format == SymmetricFormat::Full) {
+		dsymm("L", "L", &m, &n, &one, A, &n, B, &ldb, &zero, B, &ldb);
+		return;
+	}
+}
+
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format) {
     if(format == SymmetricFormat::Full) {
         for(int i = skip_first; i < p; ++i) {

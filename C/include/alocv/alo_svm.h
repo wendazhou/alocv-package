@@ -23,6 +23,18 @@ extern "C" {
 void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
 	                 double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge);
 
+
+/*! Computes RBF kernel for the given input matrix.
+ *
+ * @param n: The number of observations
+ * @param p: The number of predictors
+ * @param[in] X: The feature matrix (n x p).
+ * @param gamma: The penalty.
+ * @param[out] K: The computed kernel.
+ * 
+ */
+void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, double* K);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

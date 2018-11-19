@@ -63,6 +63,19 @@ void solve_triangular(blas_size n, blas_size p, const double* L, double* XE, bla
 void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format);
 
 
+/*! Computes a matrix-matrix product where the left input matrix is symmetric.
+ *
+ * @param m: The number of rows and columns of A
+ * @param n: The number of columns of B.
+ * @param A[in]: The symmetric matrix A, either in full (lower triangular) or RFP format.
+ * @param B[in, out]: The RHS of the operation, and where the result is stored.
+ * @param ldb: The leading dimension of B.
+ * @param format: The format of A.
+ *
+ */
+void symmetric_multiply(blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format);
+
+
 /*! Copies a column from a given symmetric or triangular matrix in RFP format to the destination pointer.
  *
  * @param n: The size of the matrix A.
@@ -70,11 +83,12 @@ void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const
  * @param k: The index of the column to copy.
  * @param B: The array to copy the column of A to.
  * @param format: The format of A.
- * @param is_symmetric: If true, indicates that A represents a symmetric matrix, otherwise indicates that A
- *						represents a triangular matrix.
+ * @param copy_symmetric: If true, indicates that we wish to extend the copied column of A assuming
+ *						  that A is a symmetric matrix.
  *
  */
-inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa, SymmetricFormat format);
+inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa,
+					    SymmetricFormat format, bool copy_symmetric = false);
 
 
 /*! Adds the given value to the diagonal of the matrix (represented in the specified format).
@@ -136,7 +150,15 @@ void strided_copy(ItS first, ItS end, ItD dest, blas_size stride_in, blas_size s
 
 #include <algorithm>
 
-inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa, SymmetricFormat format) {
+inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa,
+					    SymmetricFormat format, bool copy_symmetric) {
+	if (copy_symmetric) {
+		// when copying with symmetric extension, this is equivalent to copying the triangular array
+		// from the transpose and the non-transposed.
+		copy_column(n, A, k, B, transa == MatrixTranspose::Identity ? MatrixTranspose::Transpose : MatrixTranspose::Identity,
+			format, false);
+	}
+
 	if (format == SymmetricFormat::Full) {
 		if (transa == MatrixTranspose::Identity) {
 			std::copy(A + k * n + k, A + k * n + n, B + k);

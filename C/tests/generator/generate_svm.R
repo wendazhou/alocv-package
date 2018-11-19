@@ -114,7 +114,6 @@ g <- 2 / p
 degree <- 2
 lambda <- 1
 
-K <- polyKer(X, g, 0.0, degree)
 K <- radialKer(X, g)
 
 y <- c(rep(1, n/2), rep(-1, n/2 - 1), 1)
