@@ -122,9 +122,30 @@ void symmetric_multiply(blas_size m, blas_size n, const double* A, double* B, bl
 	const double zero = 0.0;
 
 	if (format == SymmetricFormat::Full) {
-		dsymm("L", "L", &m, &n, &one, A, &n, B, &ldb, &zero, B, &ldb);
+		dsymm("L", "L", &m, &n, &one, A, &m, B, &ldb, &zero, B, &ldb);
 		return;
 	}
+
+	const bool is_odd = m % 2 == 1;
+	const blas_size ldar = is_odd ? m : m + 1;
+	blas_size m1 = (m + 1) / 2;
+	blas_size m2 = m - m1;
+
+	const double* L22 = A + (is_odd ? ldar : 0);
+	const double* L11 = A + (is_odd ? 0 : 1);
+	const double* L12 = A + m1 + (is_odd ? 0 : 1);
+
+	// due to a bug? in Intel MKL, we have to allocate a copy
+	auto temp_storage = blas_unique_alloc<double>(16, m * n);
+	double* temp = temp_storage.get();
+
+	dlacpy("N", &m, &n, B, &ldb, temp, &m);
+
+	dsymm("L", "U", &m2, &n, &one, L22, &ldar, temp + m1, &m, &zero, B + m1, &ldb);
+	dgemm("N", "N", &m2, &n, &m1, &one, L12, &ldar, B, &ldb, &one, B + m1, &ldb);
+
+	dsymm("L", "L", &m1, &n, &one, L11, &ldar, temp, &m, &zero, B, &ldb);
+	dgemm("T", "N", &m1, &n, &m2, &one, L12, &ldar, temp + m1, &m, &one, B, &ldb);
 }
 
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format) {
