@@ -187,7 +187,6 @@ inline void transform_column(blas_size n, const double* A, blas_size k, double* 
 
 	bool is_odd = n % 2 == 1;
 	blas_size n1 = (n + 1) / 2;
-	blas_size n2 = n - n1;
 	blas_size ldar = is_odd ? n : n + 1;
 
 	if (transa == MatrixTranspose::Identity) {

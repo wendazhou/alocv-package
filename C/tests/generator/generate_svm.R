@@ -124,7 +124,7 @@ svm.fit <- e1071::svm(y ~ X, scale = F, kernel='radial', degree=degree, gamma=g,
 alpha <- rep(0, n)
 alpha[svm.fit$index] <- svm.fit$coefs
 
-yalo_info <- svm.alo(K, y, alpha, svm.fit$rho, lambda, 1e-5)
+yalo_info <- svm.alo(Kalo, y, alpha, svm.fit$rho, lambda, 1e-5)
 yalo <- yalo_info[['yalo']]
 mean_hinge <- mean(pmax(0, 1 - yalo * y))
 

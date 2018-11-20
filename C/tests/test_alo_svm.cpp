@@ -41,3 +41,18 @@ TEST_CASE("ALO SVM Correct for RFP format", "[SVM]") {
 
     blas_free(leverage);
 }
+
+TEST_CASE("ALO SVM Correct For Triangular", "[SVM]") {
+#include "examples/svm_example.in"
+
+    double alo_hinge;
+    double* leverage = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+    auto k_copy = blas_unique_alloc<double>(16, n * n);
+	dlacpy("L", &n, &n, K, &n, k_copy.get(), &n);
+
+    svm_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge);
+
+    REQUIRE(alo_hinge == Approx(expected_hinge));
+
+    blas_free(leverage);
+}

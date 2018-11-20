@@ -65,10 +65,16 @@ void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, do
 	blas_size min_one_i = -1;
 	blas_size lwork = -1;
 	blas_size info;
-	double work_size;
 
-	dgeqrf(&n, &nv, kkv, &n, tau, &work_size, &min_one_i, &info);
-	lwork = static_cast<blas_size>(work_size);
+	{
+		// work size query
+		double work_size;
+		dgeqrf(&n, &nv, kkv, &n, tau, &work_size, &min_one_i, &info);
+		lwork = static_cast<blas_size>(work_size);
+		dormqr("L", "T", &n, &ns, &nv, kkv, &n, tau, kks, &n, &work_size, &min_one_i, &info);
+		lwork = std::max(lwork, static_cast<blas_size>(work_size));
+	}
+
 	auto work_storage = blas_unique_alloc<double>(16, lwork);
 	auto work = work_storage.get();
 
@@ -199,10 +205,15 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 
 
 void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, double* K, bool use_rfp) {
-	for (blas_size i = 0; i < p; ++i) {
-		for (blas_size j = i; j < n; ++j) {
-			double value = std::inner_product(X + i * n, X + i * n + n, X + j * n, 0.0,
-				std::plus<double>{}, [](double x, double y) { return (x - y) * (x - y); });
+	for (blas_size i = 0; i < n; ++i) {
+		for (blas_size j = 0; j <= i; ++j) {
+			double value = 0.0;
+
+			for (blas_size k = 0; k < p; ++k) {
+				double x_v = X[i + k * n];
+				double y_v = X[j + k * n];
+				value += (x_v - y_v) * (x_v - y_v);
+			}
 
 			value = std::exp(-gamma * value);
 

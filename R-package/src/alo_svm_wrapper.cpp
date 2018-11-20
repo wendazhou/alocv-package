@@ -9,6 +9,10 @@ enum class KernelType : int {
     Linear = 2,
 };
 
+blas_size RfpGetSize(NumericMatrix const& K) {
+    return static_cast<blas_size>((K.ncol() + K.nrow() * 2 + 1) / 2);
+}
+
 // [[Rcpp::export]]
 List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
                   double rho, double lambda, double tolerance = 1e-5,
@@ -16,17 +20,23 @@ List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
     double alo_hinge_loss;
     blas_size n;
 
+    double* k_copy;
+
     if(use_rfp) {
         if(std::abs(K.nrow() - K.ncol() * 2) > 1) {
             Rcpp::stop("Invalid size for K in RFP format");
         }
-        n = static_cast<blas_size>((K.ncol() + K.nrow() * 2 + 1) / 2);
+        n = RfpGetSize(K);
+        k_copy = new double[n * (n + 1) / 2];
+        std::copy(&K(0, 0), &K(0, 0) + n * (n + 1) / 2, k_copy);
     }
     else {
         if(K.nrow() != K.ncol()) {
             Rcpp::stop("K must be a square matrix.");
         }
         n = static_cast<blas_size>(K.ncol());
+        k_copy = new double[n * n];
+        std::copy(&K(0, 0), &K(0, 0) + n * n, k_copy);
     }
 
     if(n != y.size()) {
@@ -39,8 +49,10 @@ List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
 
     NumericVector alo_predicted(n);
 
-    svm_compute_alo(n, &K[0], &y[0], &alpha[0], rho, lambda, tolerance,
+    svm_compute_alo(n, k_copy, &y[0], &alpha[0], rho, lambda, tolerance,
                     &alo_predicted[0], &alo_hinge_loss, use_rfp);
+
+    delete k_copy;
 
     return Rcpp::List::create(
         Rcpp::Named("predicted") = alo_predicted,
@@ -66,7 +78,7 @@ NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type,
 
     switch(static_cast<KernelType>(kernel_type)) {
     case KernelType::Radial:
-        svm_kernel_radial(n, X.ncol(), &X[0], gamma, &output[0], use_rfp);
+        svm_kernel_radial(n, X.ncol(), &X(0, 0), gamma, &output(0, 0), use_rfp);
         return output;
     default:
         stop("Unknown kernel type.");
