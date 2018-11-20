@@ -228,7 +228,7 @@ TEST_CASE("Triangular Matrix Multiply Correct for RFP (odd / T)", "[RFP]") {
 
 namespace {
 
-std::pair<unique_aligned_array<double>, unique_aligned_array<double>> compute_symmetric_multiplication(int n, int m) {
+std::pair<std::vector<double>, std::vector<double>> compute_symmetric_multiplication(int n, int m) {
 	auto init_triangular = make_random_matrices(n);
 	auto rhs = make_rectangular_matrix(n, m);
 	auto rhs2 = make_rectangular_matrix(n, m);
@@ -239,16 +239,19 @@ std::pair<unique_aligned_array<double>, unique_aligned_array<double>> compute_sy
 	auto lhs_full = init_triangular.first.get();
 	auto lhs_rfp = init_triangular.second.get();
 
-	symmetric_multiply(n, m, lhs_full, rhs_ptr, n, SymmetricFormat::Full);
-	symmetric_multiply(n, m, lhs_rfp, rhs2_ptr, n, SymmetricFormat::RFP);
+	std::vector<double> result_full(n * m);
+	std::vector<double> result_rfp(n * m);
 
-	return std::make_pair(std::move(rhs), std::move(rhs2));
+	symmetric_multiply(n, m, lhs_full, rhs_ptr, n, result_full.data(), n, SymmetricFormat::Full);
+	symmetric_multiply(n, m, lhs_rfp, rhs2_ptr, n, result_rfp.data(), n, SymmetricFormat::RFP);
+
+	return std::make_pair(std::move(result_full), std::move(result_rfp));
 }}
 
 TEST_CASE("Symmetric Matrix Multiply Correct for RFP (odd)", "[RFP]") {
 	auto results = compute_symmetric_multiplication(5, 4);
 
-	for (int i = 0; i < 20; ++i) {
+	for (std::size_t i = 0; i < results.first.size(); ++i) {
 		REQUIRE(results.first[i] == Approx(results.second[i]));
 	}
 }
@@ -271,23 +274,30 @@ TEST_CASE("Symmetric Matrix Multiply Correct for Full", "[RFP]") {
 	auto init = make_random_matrices(m);
 	auto rhs = make_rectangular_matrix(ldb, 3);
 
-	symmetric_multiply(4, 3, init.first.get(), rhs.get(), 6, SymmetricFormat::Full);
+	std::vector<double> result(ldb * 3);
 
-	std::vector<double> result(4 * 3);
-	dlacpy("N", &m, &n, rhs.get(), &ldb, result.data(), &m);
+	symmetric_multiply(4, 3, init.first.get(), rhs.get(), 6, result.data(), 6, SymmetricFormat::Full);
 
 	std::vector<double> expected = {
 		9.02457955,  15.02457955,  17.50986092,  19.41688439,
 		33.90216577,  63.90216577,  76.32857264,  85.86368999,
 		58.77975199, 112.77975199, 135.14728435, 152.3104956 };
 
-	for (blas_size i = 0; i < m * n; ++i) {
-		REQUIRE(result[i] == Approx(expected[i]));
+	int counter = 0;
+
+	for (blas_size i = 0; i < n; ++i) {
+		for (blas_size j = 0; j < m; ++j) {
+			REQUIRE(result[i * ldb + j] == Approx(expected[counter++]));
+		}
 	}
 }
 
 
 TEST_CASE("Symmetric Matrix Multiply Correct for Full Stride A", "[RFP][!shouldfail]") {
+	// It is not clear to me whether this case is supported according to the BLAS
+	// documentation. It works with many other combinations of strides and offsets,
+	// but this particular combination makes it fail.
+
 	blas_size m1 = 3;
 	blas_size m2 = 2;
 	blas_size n = 4;

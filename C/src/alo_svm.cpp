@@ -93,12 +93,9 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     double* a_slack = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* g_sub = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
-    blas_size one_i = 1;
-    double one = 1.0;
-    double zero = 0.0;
-
     // we compute K * alpha in y_pred
-    dsymv("L", &n, &one, K, &n, alpha, &one_i, &zero, y_pred, &one_i);
+	symmetric_multiply(n, 1, K, alpha, n, y_pred, n, SymmetricFormat::Full);
+    //dsymv("L", &n, &one, K, &n, alpha, &one_i, &zero, y_pred, &one_i);
 
     // a_slack will contain -lambda * y_hat
     std::transform(y_pred, y_pred + n, a_slack, [=](double x) { return -x * lambda; });

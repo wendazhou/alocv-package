@@ -100,17 +100,17 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
     // Delete all unnecessary columns first.
     for(auto i: index_removed) {
         auto it = std::find(active_index.begin(), active_index.end(), i);
-        auto loc = std::distance(active_index.begin(), it);
+        auto loc = static_cast<blas_size>(std::distance(active_index.begin(), it));
 
-        cholesky_delete_inplace_d(active_index.size(), loc, L, ldl);
+        cholesky_delete_inplace_d(static_cast<blas_size>(active_index.size()), loc, L, ldl);
         active_index.erase(it);
     }
 
     copy_active_set(n, A, lda, false, active_index, index_added, W, ldw);
     
     // Precompute the border of the matrix we are appending.
-    blas_size num_existing = active_index.size();
-    blas_size num_added = index_added.size();
+    blas_size num_existing = static_cast<blas_size>(active_index.size());
+    blas_size num_added = static_cast<blas_size>(index_added.size());
     blas_size num_total = num_existing + num_added;
     double one_d = 1.0;
     double zero_d = 0.0;
@@ -121,7 +121,7 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
     dsyrk("L", "T", &num_added, &n, &one_d, W + num_existing * ldw, &ldw, &zero_d, L + num_existing * ldl + num_existing, &ldl);
 
     // Append all necessary indices to reach the desired state.
-    cholesky_append_inplace_multiple_d(active_index.size(), index_added.size(), L, ldl);
+    cholesky_append_inplace_multiple_d(static_cast<blas_size>(active_index.size()), static_cast<blas_size>(index_added.size()), L, ldl);
     std::copy(index_added.begin(), index_added.end(), std::back_inserter(active_index));
 
     // index_new contains the corresponding set of indices.
@@ -176,7 +176,7 @@ blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B
     blas_size max_size = 0;
 
     for(blas_size i = 0; i < num_tuning; ++ i) {
-        blas_size current_size = std::count_if(B + ldb * i, B + ldb * i + p, [=](double x) { return std::abs(x) > tolerance; });
+		blas_size current_size = static_cast<blas_size>(std::count_if(B + ldb * i, B + ldb * i + p, [=](double x) { return std::abs(x) > tolerance; }));
         max_size = std::max(max_size, current_size);
     }
 
@@ -242,7 +242,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
     for(blas_size i = 0; i < m; ++i) {
         std::vector<blas_size> current_index = find_active_set(p, B + ldb * i, tolerance);
 
-        auto num_active = current_index.size();
+        auto num_active = static_cast<blas_size>(current_index.size());
 
         if (num_active == 0) {
             // no active set, reset current path.
@@ -260,7 +260,8 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_
         if (L_active > 0) {
             // update our cholesky decomposition
             lasso_update_cholesky_w_d(n, A, lda, L, ldl, W, ldw,
-                active_index.size(), active_index.data(), current_index.size(), current_index.data());
+                static_cast<blas_size>(active_index.size()), active_index.data(),
+				num_active, current_index.data());
         }
         else {
             // no existing cholesky decomposition, allocate memory and compute a new one.

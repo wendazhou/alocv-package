@@ -289,7 +289,8 @@ AloResult compute_alo_fitted_glm(blas_size n, const double* y, const double* y_f
 void compute_fitted(blas_size n, blas_size k, const double* XE,
                     const double* beta, double a0, bool has_intercept,
                     const std::vector<blas_size>& index, double* y_fitted) {
-    double* beta_active = (double*)blas_malloc(16, (index.size() + has_intercept) * sizeof(double));
+	auto beta_active_storage = blas_unique_alloc<double>(16, static_cast<blas_size>(index.size()) + has_intercept);
+	double* beta_active = beta_active_storage.get();
 
     if(has_intercept) {
         beta_active[0] = a0;
@@ -331,7 +332,7 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
     SymmetricFormat format = use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full;
 
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance) + (has_intercept ? 1 : 0);
-    const std::size_t l_size = sym_num_elements(max_active, format);
+    const blas_size l_size = sym_num_elements(max_active, format);
 
     double* y_fitted = (double*)blas_malloc(16, n * sizeof(double));
     double* L = (double*)blas_malloc(16, l_size * sizeof(double));
@@ -358,13 +359,14 @@ void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, 
             std::fill(y_fitted, y_fitted + n, 0.0);
         } else {
             copy_active_set(n, A, lda, has_intercept, current_index, std::vector<blas_size>(), XE, n);
-            compute_fitted(n, current_index.size(), XE, B + ldb * i, has_intercept ? a0[i] : 0.0,
+            compute_fitted(n, static_cast<blas_size>(current_index.size()),
+						   XE, B + ldb * i, has_intercept ? a0[i] : 0.0,
                            has_intercept, current_index, y_fitted);
 
-            scale_predictors_glm(n, current_index.size(), XE, n, y_fitted, family);
+            scale_predictors_glm(n, static_cast<blas_size>(current_index.size()), XE, n, y_fitted, family);
 
             alo_elastic_net_rfp(
-                n, current_index.size(), XE, n, lambda[i], alpha, has_intercept,
+                n, static_cast<blas_size>(current_index.size()), XE, n, lambda[i], alpha, has_intercept,
                 leverage + i * ld_leverage, L, format);
         }
 

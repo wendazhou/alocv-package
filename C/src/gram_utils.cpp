@@ -117,12 +117,12 @@ void triangular_multiply(MatrixTranspose transa, blas_size m, blas_size n, const
 }
 
 
-void symmetric_multiply(blas_size m, blas_size n, const double* A, double* B, blas_size ldb, SymmetricFormat format) {
+void symmetric_multiply(blas_size m, blas_size n, const double* A, const double* B, blas_size ldb, double* C, blas_size ldc, SymmetricFormat format) {
 	const double one = 1.0;
 	const double zero = 0.0;
 
 	if (format == SymmetricFormat::Full) {
-		dsymm("L", "L", &m, &n, &one, A, &m, B, &ldb, &zero, B, &ldb);
+		dsymm("L", "L", &m, &n, &one, A, &m, B, &ldb, &zero, C, &ldc);
 		return;
 	}
 
@@ -135,17 +135,11 @@ void symmetric_multiply(blas_size m, blas_size n, const double* A, double* B, bl
 	const double* L11 = A + (is_odd ? 0 : 1);
 	const double* L12 = A + m1 + (is_odd ? 0 : 1);
 
-	// due to a bug? in Intel MKL, we have to allocate a copy
-	auto temp_storage = blas_unique_alloc<double>(16, m * n);
-	double* temp = temp_storage.get();
+	dsymm("L", "U", &m2, &n, &one, L22, &ldar, B + m1, &ldb, &zero, C + m1, &ldc);
+	dgemm("N", "N", &m2, &n, &m1, &one, L12, &ldar, B, &ldb, &one, C + m1, &ldc);
 
-	dlacpy("N", &m, &n, B, &ldb, temp, &m);
-
-	dsymm("L", "U", &m2, &n, &one, L22, &ldar, temp + m1, &m, &zero, B + m1, &ldb);
-	dgemm("N", "N", &m2, &n, &m1, &one, L12, &ldar, B, &ldb, &one, B + m1, &ldb);
-
-	dsymm("L", "L", &m1, &n, &one, L11, &ldar, temp, &m, &zero, B, &ldb);
-	dgemm("T", "N", &m1, &n, &m2, &one, L12, &ldar, temp + m1, &m, &one, B, &ldb);
+	dsymm("L", "L", &m1, &n, &one, L11, &ldar, B, &ldb, &zero, C, &ldc);
+	dgemm("T", "N", &m1, &n, &m2, &one, L12, &ldar, B + m1, &ldb, &one, C, &ldc);
 }
 
 void offset_diagonal(blas_size p, double* L, double value, bool skip_first, SymmetricFormat format) {

@@ -26,6 +26,7 @@
 #define dgemm F77_CALL(dgemm)
 #define dtrsm F77_CALL(dtrsm)
 #define dtrmm F77_CALL(dtrmm)
+#define dsymm F77_CALL(dsymm)
 #define ddot F77_CALL(ddot)
 #define dgemv F77_CALL(dgemv)
 #define dsymv F77_CALL(dsymv)
@@ -44,7 +45,7 @@
 #endif
 
 #ifdef USE_MKL
-static inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(blas_size alignment, blas_size size) {
     return mkl_malloc(size, alignment);
 }
 
@@ -54,7 +55,7 @@ static inline void blas_free(void* ptr) {
 #elif MATLAB_MEX_FILE
 #include "mex.h"
 
-static inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(blas_size alignment, blas_size size) {
     return mxMalloc(size);
 }
 
@@ -67,7 +68,7 @@ static inline void blas_free(void* ptr) {
 
 // on windows use platform-specific _aligned_malloc
 #include <malloc.h>
-static inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(blas_size alignment, blas_size size) {
     return _aligned_malloc(size, alignment);
 }
 
@@ -78,7 +79,7 @@ static inline void blas_free(void* ptr) {
 #else // _WIN32 || _WIN64
 #include <stdlib.h>
 
-static inline void* blas_malloc(size_t alignment, size_t size) {
+static inline void* blas_malloc(blas_size alignment, blas_size size) {
     return aligned_alloc(alignment, alignment * (size + alignment - 1) / alignment);
 }
 
@@ -108,7 +109,7 @@ template<typename T>
 using unique_aligned_array = std::unique_ptr<T[], blas_deleter<T>>;
 
 template<typename T>
-unique_aligned_array<T> blas_unique_alloc(size_t alignment, size_t count) noexcept {
+unique_aligned_array<T> blas_unique_alloc(blas_size alignment, blas_size count) noexcept {
 	return unique_aligned_array<T>(static_cast<T*>(blas_malloc(alignment, count * sizeof(T))));
 }
 #endif
