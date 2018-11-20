@@ -18,10 +18,12 @@ extern "C" {
  * @param tol: Tolerance for detecting support vectors.
  * @param[out, optional] leverage: If not null, a vector of length n corresponding to the computed predicted values.
  * @param[out, optional] alo_hinge: If not null, the computed ALO hinge loss.
+ * @param format: The layout for the kernel matrix K.
  * 
  */
 void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
-	                 double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge);
+	                 double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge,
+					 bool use_rfp = false);
 
 
 /*! Computes RBF kernel for the given input matrix.
@@ -31,9 +33,10 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
  * @param[in] X: The feature matrix (n x p).
  * @param gamma: The penalty.
  * @param[out] K: The computed kernel.
+ * @param use_rfp: If true, K is computed in RFP format.
  * 
  */
-void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, double* K);
+void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, double* K, bool use_rfp = false);
 
 #ifdef __cplusplus
 } // extern "C"

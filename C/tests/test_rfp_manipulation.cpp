@@ -223,3 +223,89 @@ TEST_CASE("Copy Column Correct for Full Symmetric", "[RFP]") {
 
 	REQUIRE_THAT(my_copy, Catch::Matchers::Equals(std::vector<double>(lhs_full + k * n, lhs_full + k * n + n)));
 }
+
+namespace {
+
+std::pair<std::vector<double>, std::vector<double>> test_copy_add(int n, int k) {
+	auto init_symmetric = make_random_matrices(n);
+
+	auto lhs_full = init_symmetric.first.get();
+	auto lhs_rfp = init_symmetric.second.get();
+
+	std::vector<double> my_copy(n);
+	std::generate(my_copy.begin(), my_copy.end(), [counter = 0]() mutable { return counter++; });
+	std::vector<double> expected(my_copy.begin(), my_copy.end());
+
+	double a = 3.0;
+	copy_add_column(n, lhs_rfp, k, a, my_copy.data());
+
+	std::transform(
+		lhs_full + k * n, lhs_full + k * n + n, expected.begin(), expected.begin(), [=](double x, double y) { return a * x + y; }
+	);
+
+	return std::make_pair(std::move(my_copy), std::move(expected));
+}
+
+}
+
+TEST_CASE("Copy Add Column Correct for RFP (odd / first)", "[RFP]") {
+	auto result = test_copy_add(5, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Add Column Correct for RFP (odd / second)", "[RFP]") {
+	auto result = test_copy_add(5, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Add Column Correct for RFP (even / first)", "[RFP]") {
+	auto result = test_copy_add(4, 1);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Add Column Correct for RFP (even / second)", "[RFP]") {
+	auto result = test_copy_add(4, 3);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+
+namespace {
+
+std::pair<std::vector<double>, std::vector<double>> test_index(int n) {
+	auto init_symmetric = make_random_matrices(n);
+
+	auto lhs_full = init_symmetric.first.get();
+	auto lhs_rfp = init_symmetric.second.get();
+
+	std::vector<double> my_copy(n * (n + 1) / 2);
+	std::vector<double> reference(n * (n + 1) / 2);
+
+	int counter = 0;
+
+	for (int i = 0; i < n; ++i) {
+		for (int j = i; j < n; ++j) {
+			my_copy[counter] = *index_rfp(n, lhs_rfp, i, j);
+			reference[counter] = lhs_full[i + j * n];
+		}
+	}
+
+	return std::make_pair(std::move(my_copy), std::move(reference));
+}}
+
+
+TEST_CASE("Index Correct for RFP (even)", "[RFP]") {
+	auto result = test_index(4);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Index Correct for RFP (odd)", "[RFP]") {
+	auto result = test_index(5);
+
+	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+

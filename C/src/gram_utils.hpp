@@ -2,6 +2,7 @@
 #define WENDA_GRAM_UTILS_H_INCLUDED
 
 #include <alocv/alo_config.h>
+#include "blas_configuration.h"
 
 /** Describes the format used to store symmetric and triangular matrices
  * when required. 
@@ -219,6 +220,52 @@ inline void transform_column(blas_size n, const double* A, blas_size k, double* 
 inline void copy_column(blas_size n, const double* A, blas_size k, double* B, MatrixTranspose transa,
 					    SymmetricFormat format, bool copy_symmetric) {
 	transform_column(n, A, k, B, transa, format, copy_symmetric, identity_functor{});
+}
+
+
+/*! Computes axpy for a given column of a symmetric matrix in RFP format.
+ *
+ */
+inline void copy_add_column(blas_size n, const double* K, blas_size i, double a, double* dest) {
+	blas_size one_i = 1;
+	bool is_odd = n % 2 == 1;
+	blas_size n1 = (n + 1) / 2;
+	blas_size ldk = is_odd ? n : n + 1;
+
+	const double* K_tri = K + (is_odd ? 0 : 1);
+
+	if (i < n1) {
+		blas_size n_remaining = n - i;
+		daxpy(&i, &a, K_tri + i, &ldk, dest, &one_i);
+		daxpy(&n_remaining, &a, K_tri + i + ldk * i, &one_i, dest + i, &one_i);
+	}
+	else {
+		const double* K22 = K + (is_odd ? ldk : 0);
+		blas_size i_over = i - n1;
+		blas_size n_remaining = n - i;
+		daxpy(&n1, &a, K_tri + i, &ldk, dest, &one_i);
+		daxpy(&i_over, &a, K22 + i_over * ldk, &one_i, dest + n1, &one_i);
+		daxpy(&n_remaining, &a, K22 + i_over * ldk + i_over, &ldk, dest + i, &one_i);
+	}
+}
+
+/*! Indexes into a given matrix in RFP format.
+ *
+ */
+inline double* index_rfp(blas_size n, double* K, blas_size i, blas_size j) {
+	bool is_odd = n % 2 == 1;
+	blas_size n1 = (n + 1) / 2;
+	blas_size ldk = is_odd ? n : n + 1;
+
+	double* K_tri = K + (is_odd ? 0 : 1);
+
+	if (i < n1) {
+		return K_tri + j * ldk * i;
+	}
+	else {
+		double* K22 = K + (is_odd ? ldk : 0);
+		return K22 + (n - i) + (n - j) * ldk;
+	}
 }
 
 #endif // WENDA_GRAM_UTILS_H_INCLUDED

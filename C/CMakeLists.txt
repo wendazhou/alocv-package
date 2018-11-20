@@ -26,10 +26,6 @@ target_include_directories(alocv PUBLIC include)
 target_include_directories(alocv PRIVATE src "${intel_mkl_include}")
 target_link_libraries(alocv PUBLIC ${MKL_LIBRARIES})
 
-check_ipo_supported(RESULT ipo_supported)
-if(ipo_supported)
-	set_property(TARGET alocv PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19)
@@ -40,5 +36,11 @@ endif()
 add_executable(bench bench/main.c)
 target_link_libraries(bench PRIVATE alocv)
 target_compile_definitions(bench PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+check_ipo_supported(RESULT ipo_supported)
+if(ipo_supported)
+	set_property(TARGET alocv PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+	set_property(TARGET bench PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 add_subdirectory(tests)

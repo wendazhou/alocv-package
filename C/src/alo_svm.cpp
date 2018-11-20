@@ -10,10 +10,27 @@
 
 namespace {
 
+
+void accumulate_kernel(blas_size n, const double* K, const double* y, const std::vector<blas_size>& s_idx, double* g_temp, SymmetricFormat format) {
+	blas_size one_i = 1;
+
+	if (format == SymmetricFormat::Full) {
+		for(auto i : s_idx) {
+			daxpy(&n, y + i, K + i * n, &one_i, g_temp, &one_i);
+		}
+	}
+	else {
+		for (auto i : s_idx) {
+			copy_add_column(n, K, i, y[i], g_temp);
+		}
+	}
+}
+
+
 void svm_compute_gsub_impl(blas_size n, blas_size nv, double* kv,
                            const double* K, blas_size ldk, const double* y,
                            const std::vector<blas_size>& s_idx, const std::vector<blas_size>& v_idx,
-						   double* g_sub, double* g_temp) {
+						   double* g_sub, double* g_temp, SymmetricFormat format) {
     blas_size one_i = 1;
 
     double temp_size;
@@ -22,9 +39,7 @@ void svm_compute_gsub_impl(blas_size n, blas_size nv, double* kv,
 
     // before we do anything, we can compute the g vector
     // we start by computing the entries in V
-    for(auto i : s_idx) {
-        daxpy(&n, y + i, K + i * ldk, &one_i, g_temp, &one_i);
-    }
+	accumulate_kernel(n, K, y, s_idx, g_temp, format);
 
     dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, &temp_size, &min_one_i, &info);
 
@@ -87,15 +102,16 @@ void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, do
 
 
 void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
-                     double rho, double lambda, double tol, double* alo_predicted, double* alo_mse) {
+                     double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge,
+					 bool use_rfp) {
+	SymmetricFormat format = use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full;
     double* y_pred = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* y_hat = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* a_slack = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* g_sub = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
 
     // we compute K * alpha in y_pred
-	symmetric_multiply(n, 1, K, alpha, n, y_pred, n, SymmetricFormat::Full);
-    //dsymv("L", &n, &one, K, &n, alpha, &one_i, &zero, y_pred, &one_i);
+	symmetric_multiply(n, 1, K, alpha, n, y_pred, n, format);
 
     // a_slack will contain -lambda * y_hat
     std::transform(y_pred, y_pred + n, a_slack, [=](double x) { return -x * lambda; });
@@ -127,11 +143,11 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 
     // copy the respective columns of K into matrix.
     for(blas_size i = 0; i < nv; ++i) {
-		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Identity, SymmetricFormat::Full, true);
+		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Identity, format, true);
     }
 
     std::fill(g_sub, g_sub + n, 0.0);
-    svm_compute_gsub_impl(n, nv, kv, K, n, y, s_idx, v_idx, g_sub, a_slack);
+    svm_compute_gsub_impl(n, nv, kv, K, n, y, s_idx, v_idx, g_sub, a_slack, format);
     for(auto i : s_idx) {
         g_sub[i] = -y[i];
     }
@@ -139,18 +155,18 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     double* ks = static_cast<double*>(blas_malloc(16, n * ns * sizeof(double)));
 
     // compute cholesky decomposition of K
-	compute_cholesky(n, K, SymmetricFormat::Full);
+	compute_cholesky(n, K, format);
 
     // kv now contains L_K^{-1} K_V = L_K^T[,V]
 	std::fill(kv, kv + nv * n, 0.0);
 	for (blas_size i = 0; i < nv; ++i) {
-		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Transpose, SymmetricFormat::Full);
+		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Transpose, format);
 	}
 
 	// similarly, ks now contains L_K^{-1} K_S = L_K^T[,S]
 	std::fill(ks, ks + ns * n, 0.0);
 	for (blas_size i = 0; i < ns; ++i) {
-		copy_column(n, K, s_idx[i], ks + i * n, MatrixTranspose::Transpose, SymmetricFormat::Full);
+		copy_column(n, K, s_idx[i], ks + i * n, MatrixTranspose::Transpose, format);
 	}
 
 	svm_compute_a_impl(n, nv, ns, kv, ks, v_idx, s_idx, a_slack, lambda);
@@ -165,18 +181,37 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
         std::transform(a_slack, a_slack + n, y_hat, alo_predicted, std::plus<double>{});
     }
 
-    if(alo_mse) {
+    if(alo_hinge) {
         double accumulator = 0;
 
         for(blas_size i = 0; i < n; ++i) {
 			accumulator += std::max(0.0, 1 - y[i] * (y_hat[i] + a_slack[i]));
         }
 
-        *alo_mse = accumulator / n;
+        *alo_hinge = accumulator / n;
     }
 
     blas_free(y_hat);
     blas_free(a_slack);
     blas_free(g_sub);
     blas_free(y_pred);
+}
+
+
+void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, double* K, bool use_rfp) {
+	for (blas_size i = 0; i < p; ++i) {
+		for (blas_size j = i; j < n; ++j) {
+			double value = std::inner_product(X + i * n, X + i * n + n, X + j * n, 0.0,
+				std::plus<double>{}, [](double x, double y) { return (x - y) * (x - y); });
+
+			value = std::exp(-gamma * value);
+
+			if (use_rfp) {
+				*index_rfp(n, K, i, j) = value;
+			}
+			else {
+				K[i + j * n] = value;
+			}
+		}
+	}
 }
