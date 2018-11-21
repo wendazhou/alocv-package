@@ -210,8 +210,8 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
 }
 
 
-void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, double* A, blas_size lda,
-                         double* B, blas_size ldb, double* y, blas_size incy, double tolerance,
+void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
+                         const double* B, blas_size ldb, const double* y, blas_size incy, double tolerance,
                          double* alo, double* leverage) {
     // Allocate necessary structures
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);

@@ -28,6 +28,15 @@ std::pair<unique_aligned_array<double>, unique_aligned_array<double>> make_rando
 	return std::make_pair(std::move(X), std::move(X_rf));
 }
 
+
+unique_aligned_array<double> make_rectangular_matrix(int n, int m) {
+	auto X = blas_unique_alloc<double>(16, n * m);
+	std::generate(X.get(), X.get() + n * m, [counter = 0]() mutable { return counter++;  });
+
+	return X;
+}
+
+
 namespace {
 
 inline bool isclose(double a, double b) {
@@ -164,13 +173,6 @@ TEST_CASE("Triangular Inverse Correct for RFP (odd)", "[RFP]") {
 
 
 namespace {
-
-unique_aligned_array<double> make_rectangular_matrix(int n, int m) {
-	auto X = blas_unique_alloc<double>(16, n * m);
-	std::generate(X.get(), X.get() + n * m, [counter = 0]() mutable { return counter++;  });
-
-	return X;
-}
 
 std::pair<unique_aligned_array<double>, unique_aligned_array<double>> compute_triangular_multiplication(int n, int m, bool trans) {
 	auto init_triangular = make_random_matrices(n);

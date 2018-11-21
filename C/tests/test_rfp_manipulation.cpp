@@ -217,15 +217,17 @@ TEST_CASE("Copy Column Correct for Full Symmetric", "[RFP]") {
 	auto lhs_full = init_symmetric.first.get();
 	auto lhs_rfp = init_symmetric.second.get();
 
+    std::vector<double> expected(lhs_full + k * n, lhs_full + k * n + n);
+
 	std::fill(lhs_full, lhs_full + n * n, 0.0);
 	blas_size info;
-	dtfttr("L", "L", &n, lhs_rfp, lhs_full, &n, &info);
+	dtfttr("N", "L", &n, lhs_rfp, lhs_full, &n, &info);
 
 	std::vector<double> my_copy(n, 0.0);
 
 	copy_column(n, lhs_full, k, my_copy.data(), MatrixTranspose::Identity, SymmetricFormat::RFP, true);
 
-	REQUIRE_THAT(my_copy, Catch::Matchers::Equals(std::vector<double>(lhs_full + k * n, lhs_full + k * n + n)));
+	REQUIRE_THAT(my_copy, Catch::Matchers::Equals(expected));
 }
 
 namespace {
@@ -280,7 +282,7 @@ TEST_CASE("Copy Add Column Correct for RFP (even / second)", "[RFP]") {
 namespace {
 
 std::pair<std::vector<double>, std::vector<double>> test_index(int n) {
-	auto init_symmetric = make_random_matrices(n);
+	auto init_symmetric = make_random_matrices(n, true);
 
 	auto lhs_full = init_symmetric.first.get();
 	auto lhs_rfp = init_symmetric.second.get();
@@ -291,9 +293,13 @@ std::pair<std::vector<double>, std::vector<double>> test_index(int n) {
 	int counter = 0;
 
 	for (int i = 0; i < n; ++i) {
-		for (int j = i; j < n; ++j) {
-			my_copy[counter] = *index_rfp(n, lhs_rfp, i, j);
+		for (int j = 0; j <= i; ++j) {
+            double* rfp_ptr = index_rfp(n, lhs_rfp, i, j);
+            REQUIRE(rfp_ptr - lhs_rfp < n * (n + 1) / 2);
+            REQUIRE(rfp_ptr - lhs_rfp >= 0);
+			my_copy[counter] = *rfp_ptr;
 			reference[counter] = lhs_full[i + j * n];
+            counter += 1;
 		}
 	}
 

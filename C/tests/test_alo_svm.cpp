@@ -3,7 +3,11 @@
 #include <alocv/alo_svm.h>
 #include <blas_configuration.h>
 
+#include "rfp_utils.h"
+
 #include <algorithm>
+#include <utility>
+#include <vector>
 #include <cmath>
 
 
@@ -55,4 +59,46 @@ TEST_CASE("ALO SVM Correct For Triangular", "[SVM]") {
     REQUIRE(alo_hinge == Approx(expected_hinge));
 
     blas_free(leverage);
+}
+
+namespace {
+
+std::pair<std::vector<double>, std::vector<double>> test_radial_kernel(blas_size n, blas_size p) {
+    auto X = make_rectangular_matrix(n, p);
+
+    std::vector<double> result_full(n * n, 0.0);
+    std::vector<double> result_rfp(n * (n + 1) / 2, 0.0);
+    std::vector<double> result_rfp_converted(n * n, 0.0);
+
+    double gamma = 0.5;
+
+    svm_kernel_radial(n, p, X.get(), gamma, result_full.data(), false);
+    svm_kernel_radial(n, p, X.get(), gamma, result_rfp.data(), true);
+
+    int info;
+    dtfttr("N", "L", &n, result_rfp.data(), result_rfp_converted.data(), &n, &info);
+    REQUIRE(info == 0);
+
+    return std::make_pair(result_full, result_rfp_converted);
+}}
+
+TEST_CASE("ALO SVM Radial Kernel (even / fat)", "[SVM]") {
+    auto result = test_radial_kernel(4, 5);
+    REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("ALO SVM Radial Kernel (odd / fat)", "[SVM]") {
+    auto result = test_radial_kernel(3, 5);
+    REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+
+TEST_CASE("ALO SVM Radial Kernel (even / tall)", "[SVM]") {
+    auto result = test_radial_kernel(10, 5);
+    REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("ALO SVM Radial Kernel (odd / tall)", "[SVM]") {
+    auto result = test_radial_kernel(9, 5);
+    REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
 }

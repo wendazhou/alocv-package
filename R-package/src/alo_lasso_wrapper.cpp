@@ -10,8 +10,8 @@ List alo_lasso_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y, bool has_
     NumericVector alo(B.ncol());
     NumericMatrix leverage(A.nrow(), B.ncol());
 
-    lasso_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A[0], A.nrow(),
-                        &B[0], B.nrow(), &y[0], 1, 1e-5, &alo[0], &leverage[0]);
+    lasso_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A(0, 0), A.nrow(),
+                        &B(0, 0), B.nrow(), &y(0), 1, 1e-5, &alo[0], &leverage[0]);
 
     return Rcpp::List::create(
 		Rcpp::Named("alo") = alo,
@@ -29,8 +29,8 @@ List alo_enet_rcpp(NumericMatrix A, NumericMatrix B, NumericVector y,
     NumericVector alo_mae(B.ncol());
     NumericMatrix leverage(A.nrow(), B.ncol());
 
-    enet_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A[0], A.nrow(),
-                       &B[0], B.nrow(), &y[0],
+    enet_compute_alo_d(A.nrow(), A.ncol(), B.ncol(), &A(0, 0), A.nrow(),
+                       &B(0, 0), B.nrow(), &y[0],
                        a0.isNull() ? nullptr : &a0.as()[0],
                        &lambda[0], alpha, has_intercept, (GlmFamily)family,
                        use_rfp, tolerance,

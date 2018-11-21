@@ -258,12 +258,12 @@ inline double* index_rfp(blas_size n, double* K, blas_size i, blas_size j) {
 
 	double* K_tri = K + (is_odd ? 0 : 1);
 
-	if (i < n1) {
-		return K_tri + j * ldk * i;
+	if (j < n1) {
+		return K_tri + j * ldk + i;
 	}
 	else {
 		double* K22 = K + (is_odd ? ldk : 0);
-		return K22 + (n - i) + (n - j) * ldk;
+		return K22 + j - n1 + (i - n1) * ldk;
 	}
 }
 

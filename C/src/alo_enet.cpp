@@ -306,8 +306,6 @@ void compute_fitted(blas_size n, blas_size k, const double* XE,
     blas_size one_i = 1;
 
     dgemv("N", &n, &k, &one, XE, &n, beta_active, &one_i, &zero, y_fitted, &one_i);
-
-    blas_free(beta_active);
 }
 
 

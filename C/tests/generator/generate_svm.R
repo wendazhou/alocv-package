@@ -1,3 +1,5 @@
+source('./generation_utilities.R')
+
 svm.alo <- Rcpp::cppFunction('SEXP svmKerALO(
     const arma::mat &K, const arma::vec &y, const arma::vec &alpha,
     const double &rho, const double &lambda, const double &tol) {
@@ -69,38 +71,6 @@ radialKer <- function(X, gamma) {
   exp(-gamma * as.matrix(dist(X)) ^ 2)
 }
 
-array_to_c <- function(x, name) {
-    paste0('static const double ', name, '[] = {',
-            paste(x, collapse=','), '};')
-}
-
-constant_to_c <- function(x, name) {
-    if(class(x) == "integer") {
-        c_class <- "int";
-    } else {
-        c_class <- "double"
-    }
-    paste0('const ', c_class, " ", name, ' = ', x, ';');
-}
-
-values_to_c <- function(...) {
-    values <- list(...)
-    name <- names(values)
-
-    lines <- lapply(seq_along(values), function(i) {
-        v <- values[[i]]
-        n <- name[[i]]
-
-        if (length(v) == 1) {
-            constant_to_c(v, n)
-        } else {
-            array_to_c(v, n)
-        }
-    })
-
-    paste(lines, collapse='\n')
-}
-
 n <- 200
 p <- 50
 n2 <- round(n / 2)
@@ -118,13 +88,13 @@ K <- radialKer(X, g)
 
 y <- c(rep(1, n/2), rep(-1, n/2 - 1), 1)
 
-svm.fit <- e1071::svm(y ~ X, scale = F, kernel='radial', degree=degree, gamma=g, cost=1 / lambda,
+svm.fit <- e1071::svm(y ~ X, scale = T, kernel='radial', degree=degree, gamma=g, cost=1 / lambda,
                       tolerance=1e-6, type='C-classification')
 
 alpha <- rep(0, n)
 alpha[svm.fit$index] <- svm.fit$coefs
 
-yalo_info <- svm.alo(Kalo, y, alpha, svm.fit$rho, lambda, 1e-5)
+yalo_info <- svm.alo(K, y, alpha, svm.fit$rho, lambda, 1e-5)
 yalo <- yalo_info[['yalo']]
 mean_hinge <- mean(pmax(0, 1 - yalo * y))
 
