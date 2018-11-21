@@ -1,6 +1,7 @@
 #include <alocv/alo_svm.h>
 #include "blas_configuration.h"
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <functional>
 #include <vector>
