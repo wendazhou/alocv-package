@@ -114,8 +114,18 @@ List alo_svm_rcpp(
         double tolerance = 1e-5, bool use_rfp = false) {
 
     blas_size n = y.size();
-    auto num_elements = num_elements_and_check(X, y, alpha, use_rfp);
+
+    if (X.nrow() != n) {
+        Rcpp::stop("Feature matrix X and predictor matrix y are not compatible.");
+    }
+
+    if (n != alpha.size()) {
+        Rcpp::stop("Fitted vector alpha is not of the expected size.");
+    }
+
+    auto num_elements = use_rfp ? n * (n + 1) / 2 : n * n;
     auto K = std::unique_ptr<double[]>(new double[num_elements]);
+    std::fill(K.get(), K.get() + num_elements, 0.0);
 
     compute_kernel_impl(n, X.ncol(), &X(0, 0), K.get(),
         kernel_type, gamma, degree, coef0, use_rfp);
