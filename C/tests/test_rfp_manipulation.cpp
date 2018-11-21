@@ -243,7 +243,7 @@ std::pair<std::vector<double>, std::vector<double>> test_copy_add(int n, int k) 
 	std::vector<double> expected(my_copy.begin(), my_copy.end());
 
 	double a = 3.0;
-	copy_add_column(n, lhs_rfp, k, a, my_copy.data());
+	copy_add_column(n, lhs_rfp, k, a, my_copy.data(), SymmetricFormat::RFP);
 
 	std::transform(
 		lhs_full + k * n, lhs_full + k * n + n, expected.begin(), expected.begin(), [=](double x, double y) { return a * x + y; }
@@ -276,6 +276,48 @@ TEST_CASE("Copy Add Column Correct for RFP (even / second)", "[RFP]") {
 	auto result = test_copy_add(4, 3);
 
 	REQUIRE_THAT(result.first, Catch::Matchers::Equals(result.second));
+}
+
+TEST_CASE("Copy Add Column Correct for Full Triangular", "[RFP]") {
+    blas_size n = 5;
+    auto init_symmetric = make_random_matrices(n);
+
+	auto lhs_full = init_symmetric.first.get();
+	auto lhs_rfp = init_symmetric.second.get();
+    auto lhs_tri = std::vector<double>(n * n, 0.0);
+    dlacpy("L", &n, &n, lhs_full, &n, lhs_tri.data(), &n);
+
+	std::vector<double> my_copy(n);
+	std::generate(my_copy.begin(), my_copy.end(), [counter = 0]() mutable { return counter++; });
+	std::vector<double> expected(my_copy.begin(), my_copy.end());
+
+    double alpha = 0.5;
+    blas_size one_i = 1;
+
+    SECTION("First Column") {
+        blas_size col_index = 0;
+        copy_add_column(n, lhs_tri.data(), col_index, alpha, my_copy.data(), SymmetricFormat::Full);
+        daxpy(&n, &alpha, lhs_full + col_index * n, &one_i, expected.data(), &one_i);
+
+        REQUIRE_THAT(my_copy, Catch::Matchers::Equals(expected));
+    }
+
+    SECTION("Middle Column") {
+        blas_size col_index = 2;
+        copy_add_column(n, lhs_tri.data(), col_index, alpha, my_copy.data(), SymmetricFormat::Full);
+        daxpy(&n, &alpha, lhs_full + col_index * n, &one_i, expected.data(), &one_i);
+
+        REQUIRE_THAT(my_copy, Catch::Matchers::Equals(expected));
+    }
+
+    SECTION("Last Column") {
+        blas_size col_index = n - 1;
+        copy_add_column(n, lhs_tri.data(), col_index, alpha, my_copy.data(), SymmetricFormat::Full);
+        daxpy(&n, &alpha, lhs_full + col_index * n, &one_i, expected.data(), &one_i);
+
+        REQUIRE_THAT(my_copy, Catch::Matchers::Equals(expected));
+    }
+
 }
 
 

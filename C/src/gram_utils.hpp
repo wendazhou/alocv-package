@@ -225,8 +225,16 @@ inline void copy_column(blas_size n, const double* A, blas_size k, double* B, Ma
 /*! Computes axpy for a given column of a symmetric matrix in RFP format.
  *
  */
-inline void copy_add_column(blas_size n, const double* K, blas_size i, double a, double* dest) {
+inline void copy_add_column(blas_size n, const double* K, blas_size i, double a, double* dest, SymmetricFormat format) {
 	blas_size one_i = 1;
+
+    if (format == SymmetricFormat::Full) {
+        blas_size n_remaining = n - i;
+        daxpy(&i, &a, K + i, &n, dest, &one_i);
+        daxpy(&n_remaining, &a, K + i + i * n, &one_i, dest + i, &one_i);
+        return;
+    }
+
 	bool is_odd = n % 2 == 1;
 	blas_size n1 = (n + 1) / 2;
 	blas_size ldk = is_odd ? n : n + 1;

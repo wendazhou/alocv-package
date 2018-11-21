@@ -12,39 +12,30 @@
 namespace {
 
 
-void accumulate_kernel(blas_size n, const double* K, const double* y, const std::vector<blas_size>& s_idx, double* g_temp, SymmetricFormat format) {
-	blas_size one_i = 1;
-
-	if (format == SymmetricFormat::Full) {
-		for(auto i : s_idx) {
-			daxpy(&n, y + i, K + i * n, &one_i, g_temp, &one_i);
-		}
-	}
-	else {
-		for (auto i : s_idx) {
-			copy_add_column(n, K, i, y[i], g_temp);
-		}
-	}
-}
-
-
 void svm_compute_gsub_impl(blas_size n, blas_size nv, double* kv,
                            const double* K, blas_size ldk, const double* y,
                            const std::vector<blas_size>& s_idx, const std::vector<blas_size>& v_idx,
 						   double* g_sub, double* g_temp, SymmetricFormat format) {
     blas_size one_i = 1;
 
-    double temp_size;
     blas_size info;
     blas_size min_one_i = -1;
 
     // before we do anything, we can compute the g vector
     // we start by computing the entries in V
-	accumulate_kernel(n, K, y, s_idx, g_temp, format);
+    for(auto i : s_idx) {
+        copy_add_column(n, K, i, y[i], g_temp, format);
+    }
 
-    dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, &temp_size, &min_one_i, &info);
+    blas_size work_size;
 
-    blas_size work_size = static_cast<blas_size>(temp_size);
+    {
+        // workspace query for GELS
+        double temp_size;
+        dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, &temp_size, &min_one_i, &info);
+        work_size = static_cast<blas_size>(temp_size);
+    }
+
     double* work = static_cast<double*>(blas_malloc(16, work_size * sizeof(double)));
 
     dgels("N", &n, &nv, &one_i, kv, &n, g_temp, &n, work, &work_size, &info);
@@ -82,6 +73,8 @@ void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, do
 	dgeqrf(&n, &nv, kkv, &n, tau, work, &lwork, &info);
 
 	{
+        // compute a_slack for the elements in S
+        // For these elements, a_slack is given as a difference of two quadratic forms.
 		blas_size one_i = 1;
 		for(blas_size i = 0; i < ns; ++i) {
 			a_slack[s_idx[i]] = ddot(&n, kks + i * n, &one_i, kks + i * n, &one_i) / lambda;
@@ -95,6 +88,7 @@ void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, do
 	}
 
 	{
+        // compute a_slack for the elements in V
 		dtrtri("U", "N", &nv, kkv, &n, &info);
 
 		for (blas_size i = 0; i < nv; ++i) {
