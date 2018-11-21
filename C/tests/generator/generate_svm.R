@@ -88,7 +88,7 @@ K <- radialKer(X, g)
 
 y <- c(rep(1, n/2), rep(-1, n/2 - 1), 1)
 
-svm.fit <- e1071::svm(y ~ X, scale = T, kernel='radial', degree=degree, gamma=g, cost=1 / lambda,
+svm.fit <- e1071::svm(y ~ X, scale = F, kernel='radial', degree=degree, gamma=g, cost=1 / lambda,
                       tolerance=1e-6, type='C-classification')
 
 alpha <- rep(0, n)

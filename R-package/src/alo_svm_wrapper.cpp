@@ -2,6 +2,7 @@
 using namespace Rcpp;
 
 #include "alocv/alo_svm.h"
+#include <memory>
 
 enum class KernelType : int {
     Radial = 0,
@@ -10,32 +11,25 @@ enum class KernelType : int {
 };
 
 
-// [[Rcpp::export]]
-List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
-                  double rho, double lambda, double tolerance = 1e-5,
-                  bool use_rfp = false) {
-    double alo_hinge_loss;
-    blas_size n = y.size();
-
-    double* k_copy;
+blas_size num_elements_and_check(const NumericMatrix& K, const NumericVector& y,
+                                 const NumericVector& alpha, bool use_rfp) {
+    blas_size num_elements;
+    blas_size n = static_cast<blas_size>(y.size());
 
     if(use_rfp) {
         blas_size ldk = (n % 2 == 1) ? n : n + 1;
-        blas_size n_elements = n * (n + 1) / 2;
+        num_elements = n * (n + 1) / 2;
 
-        if(ldk != K.nrow() || ldk * K.ncol() != n_elements) {
+        if(ldk != K.nrow() || ldk * K.ncol() != num_elements) {
             Rcpp::stop("Shape of K is not compatible with observation y");
         }
-
-        k_copy = new double[n_elements];
-        std::copy(&K(0, 0), &K(0, 0) + n_elements, k_copy);
     }
     else {
         if(K.nrow() != n || K.ncol() != n) {
             Rcpp::stop("K must be a square matrix of size n x n.");
         }
-        k_copy = new double[n * n];
-        std::copy(&K(0, 0), &K(0, 0) + n * n, k_copy);
+
+        num_elements = n * n;
     }
 
     if(n != y.size()) {
@@ -46,12 +40,25 @@ List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
         Rcpp::stop("Incompatible length of dual fitted values alpha.");
     }
 
+    return num_elements;
+}
+
+
+// [[Rcpp::export]]
+List alo_svm_kernel_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
+                  double rho, double lambda, double tolerance = 1e-5,
+                  bool use_rfp = false) {
+    blas_size n = y.size();
+    auto num_elements = num_elements_and_check(K, y, alpha, use_rfp);
+
+    auto k_copy = std::unique_ptr<double[]>(new double[num_elements]);
+    std::copy(&K(0, 0), &K(0, 0) + num_elements, k_copy.get());
+
     NumericVector alo_predicted(n);
+    double alo_hinge_loss;
 
-    svm_compute_alo(n, k_copy, &y[0], &alpha[0], rho, lambda, tolerance,
+    svm_compute_alo(n, k_copy.get(), &y[0], &alpha[0], rho, lambda, tolerance,
                     &alo_predicted[0], &alo_hinge_loss, use_rfp);
-
-    delete k_copy;
 
     return Rcpp::List::create(
         Rcpp::Named("predicted") = alo_predicted,
@@ -59,8 +66,26 @@ List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
     );
 }
 
+void compute_kernel_impl(blas_size n, blas_size p, double* X, double* K,
+                         int kernel_type, double gamma, double degree, double coef0,
+                         bool use_rfp=false) {
+    switch(static_cast<KernelType>(kernel_type)) {
+    case KernelType::Radial:
+        svm_kernel_radial(n, p, X, gamma, K, use_rfp);
+        return;
+    case KernelType::Polynomial:
+        if (degree < 0) {
+            Rcpp::stop("Degree of polynomial kernel < 0!");
+        }
+        svm_kernel_polynomial(n, p, X, K, gamma, degree, coef0, use_rfp);
+        return;
+    default:
+        stop("Unknown kernel type.");
+    }
+}
+
 // [[Rcpp::export]]
-NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type,
+NumericMatrix compute_svm_kernel(NumericMatrix X, int kernel_type,
                              double gamma, double degree, double coef0,
                              bool use_rfp=false) {
     NumericMatrix output;
@@ -75,17 +100,34 @@ NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type,
         output = NumericMatrix(n, n);
     }
 
-    switch(static_cast<KernelType>(kernel_type)) {
-    case KernelType::Radial:
-        svm_kernel_radial(n, X.ncol(), &X(0, 0), gamma, &output(0, 0), use_rfp);
-        return output;
-    case KernelType::Polynomial:
-        if (degree < 0) {
-            Rcpp::stop("Degree of polynomial kernel < 0!");
-        }
-        svm_kernel_polynomial(n, X.ncol(), &X(0, 0), &output(0, 0), gamma, degree, coef0, use_rfp);
-        return output;
-    default:
-        stop("Unknown kernel type.");
-    }
+    compute_kernel_impl(n, X.ncol(), &X(0, 0), &output(0, 0),
+        kernel_type, gamma, degree, coef0, use_rfp);
+
+    return output;
+}
+
+// [[Rcpp::export]]
+List alo_svm_rcpp(
+        NumericMatrix X, NumericVector y, NumericVector alpha,
+        double rho, double lambda, int kernel_type,
+        double gamma, double degree, double coef0,
+        double tolerance = 1e-5, bool use_rfp = false) {
+
+    blas_size n = y.size();
+    auto num_elements = num_elements_and_check(X, y, alpha, use_rfp);
+    auto K = std::unique_ptr<double[]>(new double[num_elements]);
+
+    compute_kernel_impl(n, X.ncol(), &X(0, 0), K.get(),
+        kernel_type, gamma, degree, coef0, use_rfp);
+
+    NumericVector alo_predicted(n);
+    double alo_hinge_loss;
+
+    svm_compute_alo(n, K.get(), &y[0], &alpha[0], rho, lambda, tolerance,
+        &alo_predicted[0], &alo_hinge_loss, use_rfp);
+
+    return Rcpp::List::create(
+        Rcpp::Named("predicted") = alo_predicted,
+        Rcpp::Named("loss") = alo_hinge_loss
+    );
 }

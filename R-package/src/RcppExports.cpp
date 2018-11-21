@@ -39,9 +39,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// alo_svm_rcpp
-List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha, double rho, double lambda, double tolerance, bool use_rfp);
-RcppExport SEXP _alocv_alo_svm_rcpp(SEXP KSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP) {
+// alo_svm_kernel_rcpp
+List alo_svm_kernel_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha, double rho, double lambda, double tolerance, bool use_rfp);
+RcppExport SEXP _alocv_alo_svm_kernel_rcpp(SEXP KSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -52,13 +52,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
-    rcpp_result_gen = Rcpp::wrap(alo_svm_rcpp(K, y, alpha, rho, lambda, tolerance, use_rfp));
+    rcpp_result_gen = Rcpp::wrap(alo_svm_kernel_rcpp(K, y, alpha, rho, lambda, tolerance, use_rfp));
     return rcpp_result_gen;
 END_RCPP
 }
-// alo_svm_kernel
-NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type, double gamma, double degree, double coef0, bool use_rfp);
-RcppExport SEXP _alocv_alo_svm_kernel(SEXP XSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP use_rfpSEXP) {
+// compute_svm_kernel
+NumericMatrix compute_svm_kernel(NumericMatrix X, int kernel_type, double gamma, double degree, double coef0, bool use_rfp);
+RcppExport SEXP _alocv_compute_svm_kernel(SEXP XSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP use_rfpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -68,7 +68,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type degree(degreeSEXP);
     Rcpp::traits::input_parameter< double >::type coef0(coef0SEXP);
     Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
-    rcpp_result_gen = Rcpp::wrap(alo_svm_kernel(X, kernel_type, gamma, degree, coef0, use_rfp));
+    rcpp_result_gen = Rcpp::wrap(compute_svm_kernel(X, kernel_type, gamma, degree, coef0, use_rfp));
+    return rcpp_result_gen;
+END_RCPP
+}
+// alo_svm_rcpp
+List alo_svm_rcpp(NumericMatrix X, NumericVector y, NumericVector alpha, double rho, double lambda, int kernel_type, double gamma, double degree, double coef0, double tolerance, bool use_rfp);
+RcppExport SEXP _alocv_alo_svm_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< int >::type kernel_type(kernel_typeSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< double >::type degree(degreeSEXP);
+    Rcpp::traits::input_parameter< double >::type coef0(coef0SEXP);
+    Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
+    rcpp_result_gen = Rcpp::wrap(alo_svm_rcpp(X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance, use_rfp));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -76,8 +97,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_alocv_alo_lasso_rcpp", (DL_FUNC) &_alocv_alo_lasso_rcpp, 4},
     {"_alocv_alo_enet_rcpp", (DL_FUNC) &_alocv_alo_enet_rcpp, 10},
-    {"_alocv_alo_svm_rcpp", (DL_FUNC) &_alocv_alo_svm_rcpp, 7},
-    {"_alocv_alo_svm_kernel", (DL_FUNC) &_alocv_alo_svm_kernel, 6},
+    {"_alocv_alo_svm_kernel_rcpp", (DL_FUNC) &_alocv_alo_svm_kernel_rcpp, 7},
+    {"_alocv_compute_svm_kernel", (DL_FUNC) &_alocv_compute_svm_kernel, 6},
+    {"_alocv_alo_svm_rcpp", (DL_FUNC) &_alocv_alo_svm_rcpp, 11},
     {NULL, NULL, 0}
 };
 

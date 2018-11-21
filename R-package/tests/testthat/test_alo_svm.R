@@ -38,7 +38,7 @@ test_that("ALO SVM Correct for Gaussian RBF (RFP format)", {
 test_that("Kernel Correct for Polynomial", {
     df <- make_example(20, 10)
 
-    K <- alocv:::alo_svm_kernel(df$X, 1, 0.5, 3, 1.5);
+    K <- alocv:::compute_svm_kernel(df$X, 1, 0.5, 3, 1.5);
     expected <- as.matrix(tril((0.5 * tcrossprod(df$X) + 1.5)^3))
 
     expect_equal(matrix(K), matrix(expected))
