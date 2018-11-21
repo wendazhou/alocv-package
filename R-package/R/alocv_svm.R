@@ -23,7 +23,7 @@ alo.svm <- function(x, y, scale = TRUE, type = NULL,
     alpha[fit$index] <- fit$coefs
 
     alo_info <- alo_svm_rcpp(x, y, alpha, fit$rho, 1 / fit$cost,
-                             kernel_type, gamma, degree, coef0,
+                             kernel_type - 1, gamma, degree, coef0,
                              tolerance=tolerance, use_rfp=use_rfp)
 
     fit$alo_loss <- alo_info$loss
