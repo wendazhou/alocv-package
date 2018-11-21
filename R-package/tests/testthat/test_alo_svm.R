@@ -20,7 +20,7 @@ test_that("ALO SVM Correct for Gaussian RBF", {
     svm.fitalo <- alocv::alo.svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
                                  type='C-classification', use_rfp=FALSE)
 
-    expect_equal(svm.fitalo$loss, 0.346218829410011)
+    expect_equal(svm.fitalo$alo_loss, 0.346218829410011)
 })
 
 
@@ -31,5 +31,5 @@ test_that("ALO SVM Correct for Gaussian RBF (RFP format)", {
     svm.fitalo <- alocv::alo.svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
                                  type='C-classification', use_rfp=TRUE)
 
-    expect_equal(svm.fitalo$loss, 0.346218829410011)
+    expect_equal(svm.fitalo$alo_loss, 0.346218829410011)
 })

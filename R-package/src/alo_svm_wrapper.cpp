@@ -9,32 +9,31 @@ enum class KernelType : int {
     Linear = 2,
 };
 
-blas_size RfpGetSize(NumericMatrix const& K) {
-    return static_cast<blas_size>((K.ncol() + K.nrow() * 2 + 1) / 2);
-}
 
 // [[Rcpp::export]]
 List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
                   double rho, double lambda, double tolerance = 1e-5,
                   bool use_rfp = false) {
     double alo_hinge_loss;
-    blas_size n;
+    blas_size n = y.size();
 
     double* k_copy;
 
     if(use_rfp) {
-        if(std::abs(K.nrow() - K.ncol() * 2) > 1) {
-            Rcpp::stop("Invalid size for K in RFP format");
+        blas_size ldk = (n % 2 == 1) ? n : n + 1;
+        blas_size n_elements = n * (n + 1) / 2;
+
+        if(ldk != K.nrow() || ldk * K.ncol() != n_elements) {
+            Rcpp::stop("Shape of K is not compatible with observation y");
         }
-        n = RfpGetSize(K);
-        k_copy = new double[n * (n + 1) / 2];
-        std::copy(&K(0, 0), &K(0, 0) + n * (n + 1) / 2, k_copy);
+
+        k_copy = new double[n_elements];
+        std::copy(&K(0, 0), &K(0, 0) + n_elements, k_copy);
     }
     else {
-        if(K.nrow() != K.ncol()) {
-            Rcpp::stop("K must be a square matrix.");
+        if(K.nrow() != n || K.ncol() != n) {
+            Rcpp::stop("K must be a square matrix of size n x n.");
         }
-        n = static_cast<blas_size>(K.ncol());
         k_copy = new double[n * n];
         std::copy(&K(0, 0), &K(0, 0) + n * n, k_copy);
     }
