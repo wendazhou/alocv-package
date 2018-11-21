@@ -1,13 +1,3 @@
-# File with main definitions.
-
-#' alocv: A package for computing unbiased risk estimates for high-dimensional models.
-#'
-#' @docType package
-#' @name alocv
-#' @useDynLib alocv
-#' @importFrom Rcpp sourceCpp
-#' @importFrom graphics plot
-NULL
 
 
 #' Fits and computes the approximate leave-one-out cross validation for glmnet.
@@ -15,7 +5,7 @@ NULL
 #' See glmnet for parameter description
 #'
 #' @export
-alo.glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multinomial"),
+alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multinomial"),
                        weights, offset=NULL, alpha=1, nlambda=100,
                        lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
                        lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,

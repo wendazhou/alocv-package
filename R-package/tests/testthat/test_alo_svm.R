@@ -17,7 +17,7 @@ test_that("ALO SVM Correct for Gaussian RBF", {
     df <- make_example(200, 50)
     g <- 2 / 50
 
-    svm.fitalo <- alocv::alo.svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
+    svm.fitalo <- alocv::alo_svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
                                  type='C-classification', tolerance=1e-5, use_rfp=FALSE)
 
     expect_equal(svm.fitalo$alo_loss, 0.346218829410011)
@@ -28,10 +28,23 @@ test_that("ALO SVM Correct for Gaussian RBF (RFP format)", {
    df <- make_example(200, 50)
     g <- 2 / 50
 
-    svm.fitalo <- alocv::alo.svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
+    svm.fitalo <- alocv::alo_svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
                                  type='C-classification', tolerance=1e-6, use_rfp=TRUE)
 
     expect_equal(svm.fitalo$alo_loss, 0.346218829410011)
+})
+
+
+test_that("ALO SVM Correct for with S3 method", {
+    df <- make_example(200, 50)
+    g <- 2 / 50
+
+    svm_fit <- e1071::svm(df$X, df$y, scale=F, kernel='radial', gamma=g, cost=1,
+                          type='C-classification', tolerance=1e-6)
+
+    svm_fit_alo <- alocv::alocv(svm_fit, df$X, df$y)
+
+    expect_equal(svm_fit_alo$alo_loss, 0.346218829410011)
 })
 
 

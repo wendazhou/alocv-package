@@ -5,6 +5,19 @@
 \alias{alocv}
 \alias{alocv-package}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
+\usage{
+alocv(fit, x, y, ...)
+}
+\arguments{
+\item{fit:}{The fitted object.}
+
+\item{x:}{The predictor or feature matrix.}
+
+\item{y:}{The response vector.}
+}
 \description{
 alocv: A package for computing unbiased risk estimates for high-dimensional models.
+
+Computes the approximate cross-validation value for a fitted
+classifier or regressor.
 }

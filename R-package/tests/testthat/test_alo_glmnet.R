@@ -15,7 +15,7 @@ make_example <- function(n, p, eps=0.5, seed=42) {
 test_that("alocv correct for pure lasso", {
     df <- make_example(20, 10)
 
-    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=F)
+    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=F)
 
     expected_alo <- c(
         7.99425746, 7.96533423, 7.05010423, 6.29263845, 8.95506254, 7.85682146, 6.93893283,
@@ -31,7 +31,7 @@ test_that("alocv correct for pure lasso", {
 
 test_that("alocv correct for pure lasso with intercept", {
     df <- make_example(20, 10)
-    fitted <- alo.glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10)
+    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10)
 
     expected_alo <- c(8.83262606, 3.96686767, 0.69026271, 0.13926358, 0.04274022, 0.06060158)
 
@@ -42,7 +42,7 @@ test_that("alocv correct for pure lasso with intercept", {
 test_that("alocv correct for pure lasso standardized", {
     data <- make_example(20, 10)
 
-    fitted <- alo.glmnet(data$x, data$y, standardize=T, intercept=F)
+    fitted <- alo_glmnet(data$x, data$y, standardize=T, intercept=F)
 
     expected_alo <- c(
         7.9942575, 7.9653342, 7.0501042, 6.2926385, 5.6659404, 5.1476158, 4.7190896, 4.3649561,
@@ -56,7 +56,7 @@ test_that("alocv correct for pure lasso standardized", {
 
 test_that("alocv correct for enet", {
     data <- make_example(20, 10)
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, standardize = F, intercept = F)
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, standardize = F, intercept = F)
 
     expected_alo <- c(
         7.99425746, 7.97638407, 7.48546299, 8.83797445, 8.14316542, 7.50085689, 6.91023835,
@@ -71,7 +71,7 @@ test_that("alocv correct for enet", {
 
 test_that("alocv correct for enet with intercept", {
     data <- make_example(20, 10)
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, standardize=F, intercept=T)
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, standardize=F, intercept=T)
 
     expected_alo <- c(
         8.83262606, 8.92694510, 8.37881234, 10.10658713, 9.31379248, 8.57796491,
@@ -89,7 +89,7 @@ test_that("alocv correct for enet with intercept", {
 
 test_that("alocv correct for enet with scaling and intercept", {
     data <- make_example(20, 10)
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, standardize=T, intercept=T)
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, standardize=T, intercept=T)
 
     expected_alo <- c(
         8.83262606, 8.93859211, 8.32864850, 7.75758724, 7.22638910, 6.73542747, 6.28450537,
@@ -117,7 +117,7 @@ make_example_poisson <- function(n, p, eps=0.5, seed=42) {
 
 test_that("alocv correct for poisson enet", {
     data <- make_example_poisson(20, 10)
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="poisson",
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, family="poisson",
                          standardize=F, intercept=F, nlambda=10)
 
     expected_alo <- c(
@@ -142,7 +142,7 @@ make_example_logit <- function(n, p, eps=0.5, seed=42) {
 test_that("alocv correct for logistic glmnet no standardize", {
     data <- make_example_logit(50, 10)
 
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="binomial",
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, family="binomial",
                          standardize=F, intercept=F, nlambda = 10)
 
     expected_alo <- c(
@@ -156,7 +156,7 @@ test_that("alocv correct for logistic glmnet no standardize", {
 test_that("alocv correct for logistic glmnet with standardize", {
     data <- make_example_logit(50, 10)
 
-    fitted <- alo.glmnet(data$x, data$y, alpha=0.5, family="binomial",
+    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, family="binomial",
                          standardize=T, intercept=F, nlambda = 10)
 
     expected_alo <- c(
