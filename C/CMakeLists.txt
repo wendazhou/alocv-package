@@ -38,7 +38,11 @@ target_link_libraries(bench PRIVATE alocv)
 target_compile_definitions(bench PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 check_ipo_supported(RESULT ipo_supported)
-if(ipo_supported)
+if(ipo_supported AND NOT(CMAKE_BUILD_TYPE EQUAL "DEBUG"))
+	set(USE_INTERPROCEDURAL_OPT TRUE)
+endif()
+
+if(USE_INTERPROCEDURAL_OPT)
 	set_property(TARGET alocv PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 	set_property(TARGET bench PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
