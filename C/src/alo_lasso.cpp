@@ -249,7 +249,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A,
             double zero_leverage = 0.0;
 
             // fill the leverage to 0
-            std::fill(leverage + ld_leverage * i, leverage + ld_leverage * (i + 1), 0.0);
+            std::fill(leverage + ld_leverage * i, leverage + ld_leverage * i + n, 0.0);
             std::fill(y_fitted, y_fitted + n, 0.0);
             alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i);
             L_active = 0;
