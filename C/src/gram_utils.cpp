@@ -2,26 +2,33 @@
 #include "blas_configuration.h"
 
 
-void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, double* L, SymmetricFormat format) {
+void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, double* L, MatrixTranspose trans, SymmetricFormat format) {
     const double one = 1;
     const double zero = 0;
 
+    if (trans == MatrixTranspose::Transpose) {
+        std::swap(n, p);
+    }
+
+    const char* tt = trans == MatrixTranspose::Identity ? "T" : "N";
+    const char* tn = trans == MatrixTranspose::Identity ? "N" : "T";
+
     if(format == SymmetricFormat::Full) {
-        dsyrk("L", "T", &p, &n, &one, XE, &lde, &zero, L, &p);
+        dsyrk("L", tt, &p, &n, &one, XE, &lde, &zero, L, &p);
         return;
     }
 
 #ifndef ALOCV_LAPACK_NO_RFP
-    dsfrk("N", "L", "T", &p, &n, &one, XE, &lde, &zero, L);
+    dsfrk("N", "L", tt, &p, &n, &one, XE, &lde, &zero, L);
 #else
     const bool is_odd = p % 2;
     const blas_size p2 = p / 2;
     const blas_size p1 = p - p2;
     const blas_size ldl = is_odd ? p : p + 1;
 
-    dsyrk("L", "T", &p1, &n, &one, XE, &lde, &zero, L + (is_odd ? 0 : 1), &ldl);
-    dsyrk("U", "T", &p2, &n, &one, XE + p1 * lde, &lde, &zero, L + (is_odd ? p : 0), &ldl);
-    dgemm("T", "N", &p2, &p1, &n, &one, XE + p1 * lde, &lde, XE, &lde, &zero, L + p1 + (is_odd ? 0 : 1), &ldl);
+    dsyrk("L", tt, &p1, &n, &one, XE, &lde, &zero, L + (is_odd ? 0 : 1), &ldl);
+    dsyrk("U", tt, &p2, &n, &one, XE + p1 * lde, &lde, &zero, L + (is_odd ? p : 0), &ldl);
+    dgemm(tt, tn, &p2, &p1, &n, &one, XE + p1 * lde, &lde, XE, &lde, &zero, L + p1 + (is_odd ? 0 : 1), &ldl);
 #endif
 }
 

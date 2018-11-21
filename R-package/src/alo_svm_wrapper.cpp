@@ -61,7 +61,7 @@ List alo_svm_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
 
 // [[Rcpp::export]]
 NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type,
-                             double gamma, int degree, double coef0,
+                             double gamma, double degree, double coef0,
                              bool use_rfp=false) {
     NumericMatrix output;
 
@@ -78,6 +78,12 @@ NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type,
     switch(static_cast<KernelType>(kernel_type)) {
     case KernelType::Radial:
         svm_kernel_radial(n, X.ncol(), &X(0, 0), gamma, &output(0, 0), use_rfp);
+        return output;
+    case KernelType::Polynomial:
+        if (degree < 0) {
+            Rcpp::stop("Degree of polynomial kernel < 0!");
+        }
+        svm_kernel_polynomial(n, X.ncol(), &X(0, 0), &output(0, 0), gamma, degree, coef0, use_rfp);
         return output;
     default:
         stop("Unknown kernel type.");

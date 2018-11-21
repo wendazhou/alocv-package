@@ -75,8 +75,8 @@ bool gram_matrix_correct(int n, int p) {
 
     fill_random(X, n * p);
 
-    compute_gram(n, p, X, n, L_rfp, SymmetricFormat::RFP);
-    compute_gram(n, p, X, n, L_full, SymmetricFormat::Full);
+    compute_gram(n, p, X, n, L_rfp, MatrixTranspose::Identity, SymmetricFormat::RFP);
+    compute_gram(n, p, X, n, L_full, MatrixTranspose::Identity, SymmetricFormat::Full);
 
     int info;
     dtfttr("N", "L", &p, L_rfp, L_rfp_conv, &p, &info);
@@ -111,8 +111,8 @@ bool cholesky_correct(int n, int p) {
 
     fill_random(X, n * p);
 
-    compute_gram(n, p, X, n, L_rfp, SymmetricFormat::RFP);
-    compute_gram(n, p, X, n, L_full, SymmetricFormat::Full);
+    compute_gram(n, p, X, n, L_rfp, MatrixTranspose::Identity, SymmetricFormat::RFP);
+    compute_gram(n, p, X, n, L_full, MatrixTranspose::Identity, SymmetricFormat::Full);
 
     compute_cholesky(p, L_rfp, SymmetricFormat::RFP);
     compute_cholesky(p, L_full, SymmetricFormat::Full);

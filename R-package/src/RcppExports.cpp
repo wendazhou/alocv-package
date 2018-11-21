@@ -57,7 +57,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // alo_svm_kernel
-NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type, double gamma, int degree, double coef0, bool use_rfp);
+NumericMatrix alo_svm_kernel(NumericMatrix X, int kernel_type, double gamma, double degree, double coef0, bool use_rfp);
 RcppExport SEXP _alocv_alo_svm_kernel(SEXP XSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP use_rfpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -65,7 +65,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
     Rcpp::traits::input_parameter< int >::type kernel_type(kernel_typeSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
-    Rcpp::traits::input_parameter< int >::type degree(degreeSEXP);
+    Rcpp::traits::input_parameter< double >::type degree(degreeSEXP);
     Rcpp::traits::input_parameter< double >::type coef0(coef0SEXP);
     Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
     rcpp_result_gen = Rcpp::wrap(alo_svm_kernel(X, kernel_type, gamma, degree, coef0, use_rfp));

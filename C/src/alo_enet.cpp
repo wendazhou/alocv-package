@@ -42,7 +42,7 @@ void alo_elastic_net_rfp(blas_size n, blas_size p, double* XE, blas_size lde,
         L = (double*)blas_malloc(16, sizeof(double) * sym_num_elements(p_effective, format));
     }
 
-    compute_gram(n, p_effective, XE, lde, L, format);
+    compute_gram(n, p_effective, XE, lde, L, MatrixTranspose::Identity, format);
 
     if (alpha != 1) {
         double offset = (1 - alpha) * lambda;

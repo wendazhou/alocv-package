@@ -81,7 +81,7 @@ X <- matrix(rnorm(n / 2 * p), nrow=n, ncol=p)
 X[1:n2,] <- X[1:n2,] + 2.5
 X[(n2+1):n,] <- X[(n2+1):n,] - 2.5
 g <- 2 / p
-degree <- 2
+degree <- 2.5
 lambda <- 1
 
 K <- radialKer(X, g)

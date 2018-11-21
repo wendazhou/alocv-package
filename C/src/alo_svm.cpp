@@ -221,3 +221,21 @@ void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, 
 		}
 	}
 }
+
+
+void svm_kernel_polynomial(blas_size n, blas_size p, const double* X, double* K, double gamma, double degree, double coef0, bool use_rfp) {
+    compute_gram(n, p, X, n, K, MatrixTranspose::Transpose, use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full);
+
+    if (use_rfp) {
+        std::transform(K, K + n * (n + 1) / 2, K, [=](double x) {
+            return std::pow(gamma * x + coef0, degree);
+        });
+    }
+    else {
+        for (blas_size j = 0; j < n; ++j) {
+            for (blas_size i = j; i < n; ++i) {
+                K[i + j * n] = std::pow(gamma * K[i + j * n] + coef0, degree);
+            }
+        }
+    }
+}

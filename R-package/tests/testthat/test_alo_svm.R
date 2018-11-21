@@ -25,11 +25,21 @@ test_that("ALO SVM Correct for Gaussian RBF", {
 
 
 test_that("ALO SVM Correct for Gaussian RBF (RFP format)", {
-    df <- make_example(200, 50)
+   df <- make_example(200, 50)
     g <- 2 / 50
 
     svm.fitalo <- alocv::alo.svm(df$X, df$y, scale = F, kernel='radial', gamma=g, cost=1,
                                  type='C-classification', use_rfp=TRUE)
 
     expect_equal(svm.fitalo$alo_loss, 0.346218829410011)
+})
+
+
+test_that("Kernel Correct for Polynomial", {
+    df <- make_example(20, 10)
+
+    K <- alocv:::alo_svm_kernel(df$X, 1, 0.5, 3, 1.5);
+    expected <- as.matrix(tril((0.5 * tcrossprod(df$X) + 1.5)^3))
+
+    expect_equal(matrix(K), matrix(expected))
 })

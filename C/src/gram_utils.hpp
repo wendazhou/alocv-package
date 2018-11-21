@@ -21,14 +21,16 @@ enum class MatrixTranspose {
 
 /*! Computes the Gram matrix of the given dataset.
  *
- * @param n The number of rows of XE
- * @param p The number of columns of XE
- * @param XE[in] a n x p matrix representing the data
- * @param lde The leading dimension of XE
- * @param L[out] A symmetric matrix which will contain the inner product of columns of XE.
+ * @param n: The number of rows of XE
+ * @param p: The number of columns of XE
+ * @param XE[in]: a n x p matrix representing the data
+ * @param lde: The leading dimension of XE
+ * @param L[out]: A symmetric matrix which will contain the inner product of columns of XE.
+ * @param trans: Whether to transpose XE (if true, computes a kernel instead of a covariance matrix).
+ * @param format: The format of the output.
  * 
  */
-void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, double* L, SymmetricFormat format);
+void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, double* L, MatrixTranspose trans, SymmetricFormat format);
 
 /*! Computes the Cholesky decomposition of the matrix.
  *
