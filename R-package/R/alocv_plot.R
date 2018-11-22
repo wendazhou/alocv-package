@@ -2,9 +2,13 @@
 
 #' Plots information for the given ALO evaluation.
 #'
+#' @param x The alo object to plot.
+#' @param ... Additional arguments to be passed to the underlying plotting function.
+#'
 #' @export
-plot.alo <- function(x, ...) {
-    plot(log(x$lambda), x$alo,
+plot.alo_glmnet <- function(x, ...) {
+    plot(x$lambda, x$alo,
          xlab='lambda',
-         ylab='ALO risk')
+         ylab='ALO deviance risk',
+         log="x", ...)
 }

@@ -2,7 +2,7 @@
 
 S3method(alocv,glmnet)
 S3method(alocv,svm)
-S3method(plot,alo)
+S3method(plot,alo_glmnet)
 export(alo_glmnet)
 export(alo_svm)
 export(alocv)

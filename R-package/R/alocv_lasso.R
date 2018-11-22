@@ -41,7 +41,7 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
     alo <- alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha,
                                fit$a0, standardize, intercept)
 
-    class(fitted) <- c("alo", class(fitted))
+    class(fitted) <- c("alo_glmnet", "alo", class(fitted))
     fitted$alo <- alo$alo
     fitted$alo_mse <- alo$alo_mse
     fitted$alo_mae <- alo$alo_mae
@@ -97,7 +97,7 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
     alo <- alo_glmnet_internal(x, fitted$beta, y, fitted$lambda, family,
                                alpha, fitted$a0, standardize, intercept)
 
-    class(fitted) <- c("alo", class(fitted))
+    class(fitted) <- c("alo_glmnet", "alo", class(fitted))
     fitted$alo <- alo$alo
     fitted$alo_mse <- alo$alo_mse
     fitted$alo_mae <- alo$alo_mae
