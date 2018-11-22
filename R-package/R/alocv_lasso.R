@@ -90,6 +90,9 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
     nobs = nrow(x)
     nvars = ncol(x)
 
+    if (!requireNamespace("glmnet", quietly = TRUE)) {
+        stop("Package \"glmnet\" is required for this function to work. Please install it.", call. = FALSE)
+    }
     fitted <- glmnet::glmnet(x, y, family, weights, offset, alpha, nlambda,
                              lambda.min.ratio, lambda, standardize, intercept,
                              thresh, dfmax, ...)

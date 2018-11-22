@@ -21,6 +21,10 @@
 alo_svm <- function(x, y, scale = TRUE, type = NULL,
                     kernel = "radial", degree = 3, gamma = if(is.vector(x)) 1 else 1 / ncol(x),
                     coef0 = 0, cost = 1, nu = 0.5, tolerance=1e-4, use_rfp = TRUE, ...) {
+
+    if (!requireNamespace("e1071", quietly = TRUE)) {
+        stop("Package \"e1071\" is required for this function to work. Please install it.", call. = FALSE)
+    }
     fit <- e1071::svm(x, y, scale=scale, type=type, kernel=kernel, degree=degree, gamma=gamma,
                       coef0=coef0, cost=cost, tolerance=tolerance, ...)
 
