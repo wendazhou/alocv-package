@@ -1,4 +1,41 @@
+#' Computes approximate leave-one-out errors for each regularization
+#' value in the fitted object.
+#'
+#' @param fit: the fitted glmnet object
+#' @param x: the predictor matrix
+#' @param y: the response vector
+#' @param standardize: indicates whether glmnet was called with standardize. If not specified,
+#' this method will try to guess by examining the fitted object.
+#' @param intercept: indicates whether glmnet was called with an intercept. If not specified,
+#' this method will try to guess by examining the fitted object.
+#'
+#' @export
+alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL) {
+    if(is.null(alpha)) {
+        warning("Assuming alpha=1 as it was not specified. ",
+                "For correctness please ensure value is correctly specified.")
+        alpha <- 1
+    }
 
+    if(is.null(intercept)) {
+        intercept <- (!is.null(fit$a0) && any(fit$a0 != 0))
+    }
+
+    if(is.null(standardize)) {
+        standardize <- check_standardize(fit, x, y, alpha)
+    }
+
+    if(is.null(standardize)) {
+        # if still NULL, we couldn't figure out from the fitted object.
+        warning("Could not determine whether glmnet object was fitted with standardize. ",
+                "Please specify value directly.")
+        standardize <- TRUE
+    }
+
+    family <- get_glmnet_family(fit)
+
+    alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha, fit$a0)
+}
 
 #' Fits and computes the approximate leave-one-out cross validation for glmnet.
 #'
@@ -13,7 +50,6 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
                        ...) {
     family = match.arg(family)
     alpha = as.double(alpha)
-    nlam = as.integer(nlambda)
 
     nobs = nrow(x)
     nvars = ncol(x)
@@ -23,36 +59,8 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
                              thresh, dfmax, ...,
                              type.multinomial=type.multinomial)
 
-    if(standardize) {
-        rescaled <- glmnet_rescale(x, fitted$a0, as.matrix(fitted$beta), intercept, family)
-        x <- rescaled$Xs
-        a0 <- rescaled$a0s
-        beta <- rescaled$betas
-    } else {
-        a0 <- fitted$a0
-        beta <- as.matrix(fitted$beta)
-    }
-
-    if(family == "gaussian") {
-        if(alpha == 1 && !intercept) {
-            alo <- alo_lasso_rcpp(x, beta, y, has_intercept=intercept)
-        } else {
-            alo <- alo_enet_rcpp(x, beta, y,
-                                 fitted$lambda * lambda_scale(y),
-                                 family=0, alpha=alpha,
-                                 has_intercept=intercept, a0=a0)
-        }
-    } else if(family == "poisson") {
-        alo <- alo_enet_rcpp(x, beta, y, length(y) * fitted$lambda,
-                             family=1, alpha=alpha,
-                             has_intercept=intercept, a0=a0)
-    } else if (family == "binomial") {
-        alo <- alo_enet_rcpp(x, beta, y, length(y) * fitted$lambda,
-                             family=2, alpha=alpha,
-                             has_intercept=intercept, a0=a0)
-    } else {
-        stop("Unsupported family")
-    }
+    alo <- alo_glmnet_internal(x, fitted$beta, y, fitted$lambda, family,
+                               alpha, fitted$a0, standardize, intercept)
 
     class(fitted) <- c("alo", class(fitted))
     fitted$alo <- alo$alo
@@ -61,6 +69,39 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
     fitted$leverage <- alo$leverage
 
     fitted
+}
+
+
+alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0, standardize, intercept) {
+    if(standardize) {
+        rescaled <- glmnet_rescale(x, a0, as.matrix(beta), intercept, family)
+        x <- rescaled$Xs
+        a0 <- rescaled$a0s
+        beta <- rescaled$betas
+    } else {
+        beta <- as.matrix(beta)
+    }
+
+    if(family == "gaussian") {
+        if(alpha == 1 && !intercept) {
+            alo_lasso_rcpp(x, beta, y, has_intercept=intercept)
+        } else {
+            alo_enet_rcpp(x, beta, y,
+                          lambda * lambda_scale(y),
+                          family=0, alpha=alpha,
+                          has_intercept=intercept, a0=a0)
+        }
+    } else if(family == "poisson") {
+        alo_enet_rcpp(x, beta, y, length(y) * lambda,
+                      family=1, alpha=alpha,
+                      has_intercept=intercept, a0=a0)
+    } else if (family == "binomial") {
+        alo_enet_rcpp(x, beta, y, length(y) * lambda,
+                      family=2, alpha=alpha,
+                      has_intercept=intercept, a0=a0)
+    } else {
+        stop("Unsupported family")
+    }
 }
 
 glmnet_rescale = function(X, a0, beta, intercept, family) {
@@ -87,4 +128,58 @@ lambda_scale <- function(y) {
     sy <- sqrt(mean((y - mean(y)) ^ 2))
 
     n / sy
+}
+
+#' Given a glm fit and the data, determines whether
+#' standardization was applied to the data before
+#' the fit.
+#'
+#' This check is done by evaluating the dual optimal
+#' value and checking whether it corresponds to the
+#' stated penalization value.
+#'
+check_standardize <- function(fit, x, y, alpha) {
+    UseMethod("check_standardize")
+}
+
+#' Default standardize check, simply returns
+#' NULL to indicate that it is not implemented.
+check_standardize.default <- function(fit, x, y, alpha) {
+    NULL
+}
+
+check_standardize.elnet <- function(fit, x, y, alpha) {
+    if(!is.null(fit$a0)) {
+        # we have an intercept
+        y <- scale(y, center=fit$a0[1], scale=FALSE)
+    }
+
+    # compute dual optimal under assumption of standardization
+    resid0 <- y - x %*% fit$beta[,1]
+    lambda <- max(abs(t(x) %*% resid0))
+
+    !isTRUE(all.equal(lambda, fit$lambda[1] * alpha * fit$nobs))
+}
+
+
+#' Simple S3 method to obtain the name of the family
+#' used in the fitting method.
+get_glmnet_family <- function(fit) {
+    UseMethod("get_glmnet_family")
+}
+
+get_glmnet_family.default <- function(fit) {
+    stop("Unsupported family.")
+}
+
+get_glmnet_family.elnet <- function(fit) {
+    "gaussian"
+}
+
+get_glmnet_family.lognet <- function(fit) {
+    "binomial"
+}
+
+get_glmnet_family.fishnet <- function(fit) {
+    "poisson"
 }

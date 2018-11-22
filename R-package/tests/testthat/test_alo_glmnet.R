@@ -104,6 +104,24 @@ test_that("alocv correct for enet with scaling and intercept", {
     expect_equal(fitted$alo, expected_alo)
 })
 
+test_that("alocv S3 method correct for enet", {
+    data <- make_example(20, 10)
+    fitted <- glmnet::glmnet(data$x, data$y, alpha=0.5)
+    fitted_alo <- alocv(fitted, data$x, data$y)
+
+    expected_alo <- c(
+        8.83262606, 8.93859211, 8.32864850, 7.75758724, 7.22638910, 6.73542747, 6.28450537,
+        7.64471781, 7.50387431, 6.67859392, 5.93118178, 5.25737128, 4.65262670, 4.57334243,
+        3.98494943, 3.46406614, 3.00480751, 2.60132576, 2.24805021, 1.93973125, 1.67147005,
+        1.43873563, 1.23737138, 1.06359257, 0.91397692, 0.78544961, 0.67526432, 0.58098157,
+        0.50044544, 0.43175956, 0.37326310, 0.32350742, 0.28123360, 0.24535142, 0.21491967,
+        0.18912818, 0.16728144, 0.23217077, 0.19475287, 0.16337712, 0.13711118, 0.11517987,
+        0.09691583, 0.08174650, 0.06918226, 0.05880566, 0.05026180, 0.04329208, 0.03755120,
+        0.03287328, 0.02907830, 0.03194108, 0.02837800)
+
+    expect_equal(fitted_alo$alo, expected_alo)
+})
+
 make_example_poisson <- function(n, p, eps=0.5, seed=42) {
     data <- withr::with_seed(seed, {
         x <- matrix(rnorm(n * p), nrow=n, ncol=p)
@@ -165,3 +183,44 @@ test_that("alocv correct for logistic glmnet with standardize", {
 
     expect_equal(fitted$alo_mse, expected_alo, tolerance=1e-6)
 })
+
+
+elnet_standardize_test <- function(intercept, standardize, alpha=1) {
+    df <- make_example(20, 10)
+    fit <- glmnet(df$x, df$y, standardize = standardize, intercept = intercept, alpha = alpha)
+    check_standardize(fit, df$x, df$y, alpha=alpha)
+}
+
+test_that("check standardize correct for elnet (no intercept / standardize)", {
+    expect_true(elnet_standardize_test(intercept = F, standardize = T))
+})
+
+test_that("check standardize correct for elnet (no intercept / no standardize)", {
+    expect_false(elnet_standardize_test(intercept = F, standardize = F))
+})
+
+test_that("check standardize correct for elnet (intercept / standardize)", {
+    expect_true(elnet_standardize_test(intercept = T, standardize = T))
+})
+
+test_that("check standardize correct for elnet (intercept / no standardize)", {
+    expect_false(elnet_standardize_test(intercept = T, standardize = F))
+})
+
+
+test_that("check standardize correct for elnet (no intercept / standardize / alpha)", {
+    expect_true(elnet_standardize_test(intercept = F, standardize = T, alpha = 0.5))
+})
+
+test_that("check standardize correct for elnet (no intercept / no standardize / alpha)", {
+    expect_false(elnet_standardize_test(intercept = F, standardize = F, alpha = 0.5))
+})
+
+test_that("check standardize correct for elnet (intercept / standardize / alpha)", {
+    expect_true(elnet_standardize_test(intercept = T, standardize = T, alpha = 0.5))
+})
+
+test_that("check standardize correct for elnet (intercept / no standardize / alpha)", {
+    expect_false(elnet_standardize_test(intercept = T, standardize = F, alpha = 0.5))
+})
+
