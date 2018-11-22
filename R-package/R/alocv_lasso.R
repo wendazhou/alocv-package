@@ -10,7 +10,7 @@
 #' this method will try to guess by examining the fitted object.
 #'
 #' @export
-alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL) {
+alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL, ...) {
     if(is.null(alpha)) {
         warning("Assuming alpha=1 as it was not specified. ",
                 "For correctness please ensure value is correctly specified.")

@@ -18,13 +18,13 @@ alo_svm <- function(x, y, scale = TRUE, type = NULL,
 #' @param use_rfp: Whether to use rectangular full packed format to represent the kernel
 #'
 #' @export
-alocv.svm <- function(fit, x, y, tolerance=1e-5, use_rfp=TRUE) {
+alocv.svm <- function(fit, x, y, tolerance=1e-5, use_rfp=TRUE, ...) {
     alpha <- numeric(nrow(x))
     alpha[fit$index] <- fit$coefs
 
     if(!is.null(fit$x.scale)) {
-        x <- base::scale(x, center=svm.fit$x.scale$`scaled:center`,
-                         scale=svm.fit$x.scale$`scaled:scale`)
+        x <- base::scale(x, center=fit$x.scale$`scaled:center`,
+                         scale=fit$x.scale$`scaled:scale`)
     }
 
     kernel <- c("linear", "polynomial", "radial", "sigmoid")[fit$kernel + 1]
