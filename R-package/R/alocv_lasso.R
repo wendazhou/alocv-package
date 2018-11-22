@@ -1,13 +1,17 @@
 #' Computes approximate leave-one-out errors for each regularization
 #' value in the fitted object.
 #'
-#' @param fit: the fitted glmnet object
-#' @param x: the predictor matrix
-#' @param y: the response vector
-#' @param standardize: indicates whether glmnet was called with standardize. If not specified,
-#' this method will try to guess by examining the fitted object.
-#' @param intercept: indicates whether glmnet was called with an intercept. If not specified,
-#' this method will try to guess by examining the fitted object.
+#' @param fit the fitted glmnet object
+#' @param x the predictor matrix
+#' @param y the response vector
+#' @param alpha the elastic-net parameter used to fit the model.
+#' @param standardize indicates whether \code{\link[glmnet]{glmnet}} was called with standardize.
+#' If not specified, this method will try to guess by examining the fitted object.
+#' @param intercept indicates whether \code{\link[glmnet]{glmnet}} was called with an intercept.
+#' If not specified, this method will try to guess by examining the fitted object.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @seealso \code{\link[glmnet]{glmnet}}
 #'
 #' @export
 alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL, ...) {
@@ -34,20 +38,52 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
 
     family <- get_glmnet_family(fit)
 
-    alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha, fit$a0)
+    alo <- alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha,
+                               fit$a0, standardize, intercept)
+
+    class(fitted) <- c("alo", class(fitted))
+    fitted$alo <- alo$alo
+    fitted$alo_mse <- alo$alo_mse
+    fitted$alo_mae <- alo$alo_mae
+    fitted$leverage <- alo$leverage
+
+    fitted
 }
 
 #' Fits and computes the approximate leave-one-out cross validation for glmnet.
 #'
-#' See glmnet for parameter description
+#' @param x The data matrix.
+#' @param y The response vector.
+#' @param family The family of the glm to fit.
+#' @param weights Observation weights.
+#' @param offset A vector of length nobs included in the linear predictor.
+#' @param alpha Elastic net parameter.
+#' @param nlambda The number of \code{lambda} values.
+#' @param lambda.min.ratio Smallest value for \code{lambda} as a fraction of the largest.
+#' @param lambda A user supplied lambda sequence.
+#' @param standardize Whether to apply \code{x} variable standardization.
+#' @param intercept Whether intercepts should be fitted.
+#' @param thresh Convergence threshold for coordinate descent.
+#' @param dfmax Limit maximum number of variables in the model.
+#' @param ... Other parameters passed on to \code{\link[glmnet]{glmnet}}
+#'
+#' @return An object with S3 class \code{"alo"} in addition to the
+#' classes corresponding to the fitted object returned by \code{\link[glmnet]{glmnet}}.
+#' Additional fields are introduced to the object to represent the computed ALO
+#' values.
+#' \item{alo}{A numerical vector representing the ALO deviance loss for each tuning value.}
+#' \item{alo_mse}{A numerical vector representing the ALO MSE loss for each tuning value.}
+#' \item{alo_mae}{A numerical vector representing the ALO MAE loss for each tuning value.}
+#' \item{leverage}{A numerical matrix representing the computed leverage of each data point for each tuning value.}
+#'
+#' @seealso \code{\link[glmnet]{glmnet}}
 #'
 #' @export
-alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multinomial"),
+alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
                        weights, offset=NULL, alpha=1, nlambda=100,
                        lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
                        lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,
-                       dfmax = nvars + 1, type.multinomial=c("ungrouped", "grouped"),
-                       ...) {
+                       dfmax = nvars + 1, ...) {
     family = match.arg(family)
     alpha = as.double(alpha)
 
@@ -56,8 +92,7 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
 
     fitted <- glmnet::glmnet(x, y, family, weights, offset, alpha, nlambda,
                              lambda.min.ratio, lambda, standardize, intercept,
-                             thresh, dfmax, ...,
-                             type.multinomial=type.multinomial)
+                             thresh, dfmax, ...)
 
     alo <- alo_glmnet_internal(x, fitted$beta, y, fitted$lambda, family,
                                alpha, fitted$a0, standardize, intercept)
@@ -72,6 +107,19 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson", "multin
 }
 
 
+#' Internal code to compute ALO for Lasso / elastic net problems.
+#'
+#' @param x The data matrix
+#' @param beta A matrix of fitted parameter values for each tuning value.
+#' @param y The response vector.
+#' @param lambda A vector of penalization values.
+#' @param family The family of the glm that was fit.
+#' @param alpha The elastic-net parameter.
+#' @param a0 The fitted intercept values for each penalization value.
+#' @param standardize A logical value indicating whether \code{x} should be standardized.
+#' @param intercept A logical value indicating whether an intercept was fit to the model.
+#'
+#'
 alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0, standardize, intercept) {
     if(standardize) {
         rescaled <- glmnet_rescale(x, a0, as.matrix(beta), intercept, family)
@@ -138,12 +186,16 @@ lambda_scale <- function(y) {
 #' value and checking whether it corresponds to the
 #' stated penalization value.
 #'
+#' @param fit The fitted object
+#' @param x The data matrix
+#' @param y The response vector
+#' @param alpha The elastic net parameter.
 check_standardize <- function(fit, x, y, alpha) {
     UseMethod("check_standardize")
 }
 
-#' Default standardize check, simply returns
-#' NULL to indicate that it is not implemented.
+# Default standardize check, simply returns
+# NULL to indicate that it is not implemented.
 check_standardize.default <- function(fit, x, y, alpha) {
     NULL
 }
@@ -162,8 +214,8 @@ check_standardize.elnet <- function(fit, x, y, alpha) {
 }
 
 
-#' Simple S3 method to obtain the name of the family
-#' used in the fitting method.
+# Simple S3 method to obtain the name of the family
+# used in the fitting method.
 get_glmnet_family <- function(fit) {
     UseMethod("get_glmnet_family")
 }

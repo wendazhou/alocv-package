@@ -1,21 +1,40 @@
 
 #' Fits and computes the approximate cross-validation for SVMs.
 #'
+#' @param x The data matrix
+#' @param y The response vector
+#' @param scale A logical vector indicating the variables to be scaled.
+#' @param type The type of svm to fit. Only 'C-classification' is supported at the moment.
+#' @param kernel The kernel used in traaining and predicting.
+#' @param degree Parameter for polynomial kernels.
+#' @param gamma Scale parameter needed for all kernels. Default 1 / (data dimension).
+#' @param coef0 Offset parameter needed for kernels.
+#' @param cost Cost of constrain violations.
+#' @param nu Hyperparameter for some SVM types.
+#' @param tolerance Tolerance for SVM solver, and for support vector detection in ALO procedure.
+#' @param use_rfp If true, uses rectangular full packed matrices in ALO algorithm. Reduces memory requirement.
+#' @param ... Additional parameters to be passed to the underlying SVM fit function.
 #'
-#'@export
+#' @seealso \code{\link[e1071]{svm}}
+#'
+#' @export
 alo_svm <- function(x, y, scale = TRUE, type = NULL,
                     kernel = "radial", degree = 3, gamma = if(is.vector(x)) 1 else 1 / ncol(x),
-                    coef0 = 0, cost = 1, nu = 0.5, tolerance=1e-4, use_rfp = TRUE) {
+                    coef0 = 0, cost = 1, nu = 0.5, tolerance=1e-4, use_rfp = TRUE, ...) {
     fit <- e1071::svm(x, y, scale=scale, type=type, kernel=kernel, degree=degree, gamma=gamma,
-                      coef0=coef0, cost=cost, tolerance=tolerance)
+                      coef0=coef0, cost=cost, tolerance=tolerance, ...)
 
     alocv.svm(fit, x, y, tolerance=tolerance, use_rfp=use_rfp)
 }
 
 #' Approximate Leave-one-out cross validation for SVM objects
 #'
-#' @param tolerance: The tolerance to use in detecting support vectors
-#' @param use_rfp: Whether to use rectangular full packed format to represent the kernel
+#' @param fit The fitted svm object.
+#' @param x The data matrix.
+#' @param y The response vector.
+#' @param tolerance The tolerance to use in detecting support vectors.
+#' @param use_rfp Whether to use rectangular full packed format to represent the kernel. Reduces memory usage.
+#' @param ... Further arguments passed to or from other methods.
 #'
 #' @export
 alocv.svm <- function(fit, x, y, tolerance=1e-5, use_rfp=TRUE, ...) {
