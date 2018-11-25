@@ -20,18 +20,6 @@ std::vector<blas_size> find_active_set(blas_size p, const double* beta, double t
 blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B, blas_size ldb, double tolerance);
 
 
-/*! Computes the ALO value given the fitted observations and leverage.
- *
- * @param n: The number of observations
- * @param[in] y: A vector containing the true observed value.
- * @param[in] y_fitted: A vector containing the fitted value (in link space).
- * @param[in] leverage: A vector containing the leverage for each observation.
- * 
- * @returns The ALO mean-squared error.
- */
-double compute_alo_fitted(blas_size n, const double* y, const double* y_fitted, const double* leverage);
-
-
 /*! Copies over the active predictors to a packed matrix.
  *
  * @param n The number of observations

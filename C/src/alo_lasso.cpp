@@ -195,6 +195,18 @@ void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double
 }
 
 
+double compute_alo_fitted(blas_size n, const double* y, const double* y_fitted, const double* leverage, double intercept) {
+    double acc = 0;
+
+    for(blas_size i = 0; i < n; ++i) {
+        double res = (y[i] - y_fitted[i] - intercept) / (1 - leverage[i]);
+        acc += res * res;
+    }
+
+    return acc / n;
+}
+
+
 /*! Update the copy of the data in the active set we maintain.
  *
  *  In order to efficiently compute the cholesky decomposition and the residuals,
@@ -252,7 +264,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A,
             // fill the leverage to 0
             std::fill(leverage + ld_leverage * i, leverage + ld_leverage * i + n, 0.0);
             std::fill(y_fitted, y_fitted + n, 0.0);
-            alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i);
+            alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i, intercept ? intercept[i] : 0.0);
             L_active = 0;
             continue;
         }
@@ -290,14 +302,14 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A,
             continue;
         }
 
-        // compute the fitted values
-        compute_fitted(n, num_active, W, B + i * ldb, intercept ? intercept[i] : 0.0, intercept != nullptr, active_index, y_fitted);
+        // compute the fitted values (up to an offset)
+        compute_fitted(n, num_active, W, B + i * ldb, 0.0, false, active_index, y_fitted);
 
         // compute the leverage value.
         lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage + ld_leverage * i);
 
         // compute the current ALO vlue.
-        alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i);
+        alo[i] = compute_alo_fitted(n, y, y_fitted, leverage + ld_leverage * i, intercept ? intercept[i] : 0.0);
     }
 
     // free all the buffers

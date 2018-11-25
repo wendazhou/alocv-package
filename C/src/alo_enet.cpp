@@ -309,17 +309,6 @@ void compute_fitted(blas_size n, blas_size k, const double* XE,
 }
 
 
-double compute_alo_fitted(blas_size n, const double* y, const double* y_fitted, const double* leverage) {
-    double acc = 0;
-
-    for(blas_size i = 0; i < n; ++i) {
-        double res = (y[i] - y_fitted[i]) / (1 - leverage[i]);
-        acc += res * res;
-    }
-
-    return acc / n;
-}
-
 
 void enet_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
                         const double* B, blas_size ldb, const double* y, const double* a0,

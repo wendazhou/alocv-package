@@ -10,11 +10,15 @@
 #' @param intercept indicates whether \code{\link[glmnet]{glmnet}} was called with an intercept.
 #' If not specified, this method will try to guess by examining the fitted object.
 #' @param ... Further arguments passed to or from other methods.
+#' @param lasso_approximate_intercept If true, uses a slightly less accurate but
+#' faster method for the pure LASSO case (which ignores the variability of the
+#' intercept).
 #'
 #' @seealso \code{\link[glmnet]{glmnet}}
 #'
 #' @export
-alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL, ...) {
+alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL,
+                         ..., lasso_approximate_intercept=TRUE) {
     if(is.null(alpha)) {
         warning("Assuming alpha=1 as it was not specified. ",
                 "For correctness please ensure value is correctly specified.")
@@ -39,7 +43,7 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
     family <- get_glmnet_family(fit)
 
     alo <- alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha,
-                               fit$a0, standardize, intercept)
+                               fit$a0, standardize, intercept, lasso_approximate_intercept)
 
     class(fitted) <- c("alo_glmnet", "alo", class(fitted))
     fitted$alo <- alo$alo
@@ -66,6 +70,9 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
 #' @param thresh Convergence threshold for coordinate descent.
 #' @param dfmax Limit maximum number of variables in the model.
 #' @param ... Other parameters passed on to \code{\link[glmnet]{glmnet}}
+#' @param lasso_approximate_intercept If true, uses a slightly less accurate but
+#' faster method for the pure LASSO case (which ignores the variability of the
+#' intercept).
 #'
 #' @return An object with S3 class \code{"alo"} in addition to the
 #' classes corresponding to the fitted object returned by \code{\link[glmnet]{glmnet}}.
@@ -83,7 +90,7 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
                        weights, offset=NULL, alpha=1, nlambda=100,
                        lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
                        lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,
-                       dfmax = nvars + 1, ...) {
+                       dfmax = nvars + 1, ..., lasso_approximate_intercept=TRUE) {
     family = match.arg(family)
     alpha = as.double(alpha)
 
@@ -98,7 +105,7 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
                              thresh, dfmax, ...)
 
     alo <- alo_glmnet_internal(x, fitted$beta, y, fitted$lambda, family,
-                               alpha, fitted$a0, standardize, intercept)
+                               alpha, fitted$a0, standardize, intercept, lasso_approximate_intercept)
 
     class(fitted) <- c("alo_glmnet", "alo", class(fitted))
     fitted$alo <- alo$alo
@@ -121,9 +128,13 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
 #' @param a0 The fitted intercept values for each penalization value.
 #' @param standardize A logical value indicating whether \code{x} should be standardized.
 #' @param intercept A logical value indicating whether an intercept was fit to the model.
+#' @param lasso_approximate_intercept If true, uses a faster algorithm for the pure lasso
+#' case even when the intercept is given. This ignores the contribution of the uncertainty
+#' of the intercept to the final estimation error.
 #'
 #'
-alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0, standardize, intercept) {
+alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0,
+                                standardize, intercept, lasso_approximate_intercept=FALSE) {
     if(standardize) {
         rescaled <- glmnet_rescale(x, a0, as.matrix(beta), intercept, family)
         x <- rescaled$Xs
@@ -134,7 +145,8 @@ alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0, standardi
     }
 
     if(family == "gaussian") {
-        if(alpha == 1 && !intercept) {
+        if(alpha == 1 && (!intercept || lasso_approximate_intercept)) {
+            # Special fast-path algorithm for LASSO.
             alo_lasso_rcpp(x, beta, y, a0=if(intercept) a0 else NULL)
         } else {
             alo_enet_rcpp(x, beta, y,

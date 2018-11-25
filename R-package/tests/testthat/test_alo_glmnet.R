@@ -31,11 +31,21 @@ test_that("alocv correct for pure lasso", {
 
 test_that("alocv correct for pure lasso with intercept", {
     df <- make_example(20, 10)
-    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10)
+    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10, lasso_approximate_intercept = F)
 
     expected_alo <- c(8.83262606, 3.96686767, 0.69026271, 0.13926358, 0.04274022, 0.06060158)
 
     expect_equal(fitted$alo, expected_alo)
+})
+
+
+test_that("alocv reasonable for pure lasso with intercept approximation", {
+    df <- make_example(20, 10)
+    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10, lasso_approximate_intercept = T)
+
+    expected_alo <- c(8.83262606, 3.96686767, 0.69026271, 0.13926358, 0.04274022, 0.06060158)
+
+    expect_true(all(fitted$alo <= expected_alo))
 })
 
 
