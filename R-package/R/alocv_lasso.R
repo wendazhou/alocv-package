@@ -135,21 +135,21 @@ alo_glmnet_internal <- function(x, beta, y, lambda, family, alpha, a0, standardi
 
     if(family == "gaussian") {
         if(alpha == 1 && !intercept) {
-            alo_lasso_rcpp(x, beta, y, has_intercept=intercept)
+            alo_lasso_rcpp(x, beta, y, a0=if(intercept) a0 else NULL)
         } else {
             alo_enet_rcpp(x, beta, y,
                           lambda * lambda_scale(y),
                           family=0, alpha=alpha,
-                          has_intercept=intercept, a0=a0)
+                          a0=if(intercept) a0 else NULL)
         }
     } else if(family == "poisson") {
         alo_enet_rcpp(x, beta, y, length(y) * lambda,
                       family=1, alpha=alpha,
-                      has_intercept=intercept, a0=a0)
+                      a0=if(intercept) a0 else NULL)
     } else if (family == "binomial") {
         alo_enet_rcpp(x, beta, y, length(y) * lambda,
                       family=2, alpha=alpha,
-                      has_intercept=intercept, a0=a0)
+                      a0=if(intercept) a0 else NULL)
     } else {
         stop("Unsupported family")
     }

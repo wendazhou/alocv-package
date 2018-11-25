@@ -211,7 +211,8 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
 
 
 void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A, blas_size lda,
-                         const double* B, blas_size ldb, const double* y, blas_size incy, double tolerance,
+                         const double* B, blas_size ldb, const double* y, blas_size incy,
+                         const double* intercept, double tolerance,
                          double* alo, double* leverage) {
     // Allocate necessary structures
     blas_size max_active = max_active_set_size(m, p, B, ldb, tolerance);
@@ -290,7 +291,7 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A,
         }
 
         // compute the fitted values
-        compute_fitted(n, num_active, W, B + i * ldb, 0.0, false, active_index, y_fitted);
+        compute_fitted(n, num_active, W, B + i * ldb, intercept ? intercept[i] : 0.0, intercept != nullptr, active_index, y_fitted);
 
         // compute the leverage value.
         lasso_compute_leverage_cholesky_d(n, num_active, W, ldw, L, ldl, leverage + ld_leverage * i);

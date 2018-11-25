@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
     switch(method) {
     case 0:
         printf("Computing ALO for method: LASSO\n");
-        lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, 1e-5, alo_result, NULL);
+        lasso_compute_alo_d(n, p, m, A, n, B, p, y, 1, NULL, 1e-5, alo_result, NULL);
         break;
     case 1:
         printf("Computing ALO for method: Elastic-Net\n");
