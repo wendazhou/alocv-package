@@ -18,12 +18,14 @@ extern "C" {
  * @param tol: Tolerance for detecting support vectors.
  * @param[out, optional] leverage: If not null, a vector of length n corresponding to the computed predicted values.
  * @param[out, optional] alo_hinge: If not null, the computed ALO hinge loss.
- * @param format: The layout for the kernel matrix K.
+ * @param use_rfp: If true, indicates that K is communicated in RFP format.
+ * @param use_pivoting: If true, indicates that pivoting should be used (enables computation on potentially singular kernels).
+ *                      Note that this is not compatible with use_rfp, and will be ignored if use_rfp is set to true.
  * 
  */
 void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
 	                 double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge,
-					 bool use_rfp = false);
+					 bool use_rfp = false, bool use_pivoting = false);
 
 
 /*! Computes RBF kernel for the given input matrix.

@@ -104,12 +104,18 @@ void svm_compute_a_impl(blas_size n, blas_size nv, blas_size ns, double* kkv, do
 
 void svm_compute_alo(blas_size n, double* K, const double* y, const double* alpha,
                      double rho, double lambda, double tol, double* alo_predicted, double* alo_hinge,
-					 bool use_rfp) {
+					 bool use_rfp, bool use_pivoting) {
 	SymmetricFormat format = use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full;
     double* y_pred = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* y_hat = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* a_slack = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
     double* g_sub = static_cast<double*>(blas_malloc(16, n * sizeof(double)));
+
+    std::unique_ptr<blas_size[]> pivot = nullptr;
+
+    if (use_pivoting) {
+        pivot.reset(new blas_size[n]);
+    }
 
     // we compute K * alpha in y_pred
 	symmetric_multiply(n, 1, K, alpha, n, y_pred, n, format);
@@ -156,18 +162,35 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
     double* ks = static_cast<double*>(blas_malloc(16, n * ns * sizeof(double)));
 
     // compute cholesky decomposition of K
-	compute_cholesky(n, K, format);
+    if (format == SymmetricFormat::Full && use_pivoting) {
+        blas_size rank;
+        blas_size info;
+        auto work = blas_unique_alloc<double>(16, 2 * n);
+        auto chol_pivot = blas_unique_alloc<blas_size>(16, n);
+
+        dpstrf("L", &n, K, &n, chol_pivot.get(), &rank, &tol, work.get(), &info);
+
+        std::generate_n(pivot.get(), n, [counter = 0]() mutable { return counter++; });
+        std::sort(pivot.get(), pivot.get() + n, [&](blas_size i1, blas_size i2) {
+            return chol_pivot[i1] < chol_pivot[i2];
+        });
+    }
+    else {
+	    compute_cholesky(n, K, format);
+    }
 
     // kv now contains L_K^{-1} K_V = L_K^T[,V]
 	std::fill(kv, kv + nv * n, 0.0);
 	for (blas_size i = 0; i < nv; ++i) {
-		copy_column(n, K, v_idx[i], kv + i * n, MatrixTranspose::Transpose, format);
+        auto target_column = pivot ? pivot[v_idx[i]] : v_idx[i];
+		copy_column(n, K, target_column, kv + i * n, MatrixTranspose::Transpose, format);
 	}
 
 	// similarly, ks now contains L_K^{-1} K_S = L_K^T[,S]
 	std::fill(ks, ks + ns * n, 0.0);
 	for (blas_size i = 0; i < ns; ++i) {
-		copy_column(n, K, s_idx[i], ks + i * n, MatrixTranspose::Transpose, format);
+        auto target_column = pivot ? pivot[s_idx[i]] : s_idx[i];
+		copy_column(n, K, target_column, ks + i * n, MatrixTranspose::Transpose, format);
 	}
 
 	svm_compute_a_impl(n, nv, ns, kv, ks, v_idx, s_idx, a_slack, lambda);
