@@ -111,7 +111,6 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
     // Precompute the border of the matrix we are appending.
     blas_size num_existing = static_cast<blas_size>(active_index.size());
     blas_size num_added = static_cast<blas_size>(index_added.size());
-    blas_size num_total = num_existing + num_added;
     double one_d = 1.0;
     double zero_d = 0.0;
 
@@ -185,7 +184,6 @@ blas_size max_active_set_size(blas_size num_tuning, blas_size p, const double* B
 
 
 void compute_cholesky(blas_size n, blas_size k, double* W, blas_size ldw, double* L, blas_size ldl) {
-    blas_size one = 1;
     double one_d = 1.0;
     double zero_d = 0.0;
     blas_size info;
@@ -259,7 +257,6 @@ void lasso_compute_alo_d(blas_size n, blas_size p, blas_size m, const double* A,
 
         if (num_active == 0) {
             // no active set, reset current path.
-            double zero_leverage = 0.0;
 
             // fill the leverage to 0
             std::fill(leverage + ld_leverage * i, leverage + ld_leverage * i + n, 0.0);

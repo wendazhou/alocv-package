@@ -47,7 +47,7 @@ blas_size num_elements_and_check(const NumericMatrix& K, const NumericVector& y,
 // [[Rcpp::export]]
 List alo_svm_kernel_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
                   double rho, double lambda, double tolerance = 1e-5,
-                  bool use_rfp = false) {
+                  bool use_rfp = false, bool use_pivot = false) {
     blas_size n = y.size();
     auto num_elements = num_elements_and_check(K, y, alpha, use_rfp);
 
@@ -58,7 +58,7 @@ List alo_svm_kernel_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
     double alo_hinge_loss;
 
     svm_compute_alo(n, k_copy.get(), &y[0], &alpha[0], rho, lambda, tolerance,
-                    &alo_predicted[0], &alo_hinge_loss, use_rfp);
+                    &alo_predicted[0], &alo_hinge_loss, use_rfp, use_pivot);
 
     return Rcpp::List::create(
         Rcpp::Named("predicted") = alo_predicted,
@@ -111,7 +111,7 @@ List alo_svm_rcpp(
         NumericMatrix X, NumericVector y, NumericVector alpha,
         double rho, double lambda, int kernel_type,
         double gamma, double degree, double coef0,
-        double tolerance = 1e-5, bool use_rfp = false) {
+        double tolerance = 1e-5, bool use_rfp = false, bool use_pivot = false) {
 
     blas_size n = y.size();
 
@@ -134,7 +134,7 @@ List alo_svm_rcpp(
     double alo_hinge_loss;
 
     svm_compute_alo(n, K.get(), &y[0], &alpha[0], rho, lambda, tolerance,
-        &alo_predicted[0], &alo_hinge_loss, use_rfp);
+        &alo_predicted[0], &alo_hinge_loss, use_rfp, use_pivot);
 
     return Rcpp::List::create(
         Rcpp::Named("predicted") = alo_predicted,

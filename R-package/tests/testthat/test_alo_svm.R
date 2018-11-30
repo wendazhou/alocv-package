@@ -48,6 +48,19 @@ test_that("ALO SVM Correct for with S3 method", {
 })
 
 
+test_that("ALO SVM Correct for with S3 method and pivoting", {
+    df <- make_example(200, 50)
+    g <- 2 / 50
+
+    svm_fit <- e1071::svm(df$X, df$y, scale=F, kernel='radial', gamma=g, cost=1,
+                          type='C-classification', tolerance=1e-6)
+
+    svm_fit_alo <- alocv::alocv(svm_fit, df$X, df$y, use_rfp=FALSE, use_pivot=TRUE)
+
+    expect_equal(svm_fit_alo$alo_loss, 0.346218829410011)
+})
+
+
 test_that("Kernel Correct for Polynomial", {
     df <- make_example(20, 10)
 

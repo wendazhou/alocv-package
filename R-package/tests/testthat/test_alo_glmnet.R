@@ -115,9 +115,9 @@ test_that("alocv correct for enet with scaling and intercept", {
 })
 
 test_that("alocv S3 method correct for enet", {
-    data <- make_example(20, 10)
-    fitted <- glmnet::glmnet(data$x, data$y, alpha=0.5)
-    fitted_alo <- alocv(fitted, data$x, data$y, alpha=0.5)
+    df <- make_example(20, 10)
+    fit_glmnet <- glmnet::glmnet(df$x, df$y, alpha=0.5)
+    fitted_alo <- alocv(fit_glmnet, df$x, df$y, alpha=0.5)
 
     expected_alo <- c(
         8.83262606, 8.93859211, 8.32864850, 7.75758724, 7.22638910, 6.73542747, 6.28450537,

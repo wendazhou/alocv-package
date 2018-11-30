@@ -31,6 +31,7 @@
 #define dgemv F77_CALL(dgemv)
 #define dsymv F77_CALL(dsymv)
 #define dpotrf F77_CALL(dpotrf)
+#define dpstrf F77_CALL(dpstrf)
 #define dgels F77_CALL(dgels)
 #define dgeqrf F77_CALL(dgeqrf)
 #define dormqr F77_CALL(dormqr)

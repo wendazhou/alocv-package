@@ -170,7 +170,10 @@ void svm_compute_alo(blas_size n, double* K, const double* y, const double* alph
 
         dpstrf("L", &n, K, &n, chol_pivot.get(), &rank, &tol, work.get(), &info);
 
-        std::generate_n(pivot.get(), n, [counter = 0]() mutable { return counter++; });
+        for (blas_size i = 0; i < n; ++i) {
+            pivot[i] = i;
+        }
+
         std::sort(pivot.get(), pivot.get() + n, [&](blas_size i1, blas_size i2) {
             return chol_pivot[i1] < chol_pivot[i2];
         });

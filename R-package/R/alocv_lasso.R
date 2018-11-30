@@ -45,13 +45,13 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
     alo <- alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha,
                                fit$a0, standardize, intercept, lasso_approximate_intercept)
 
-    class(fitted) <- c("alo_glmnet", "alo", class(fitted))
-    fitted$alo <- alo$alo
-    fitted$alo_mse <- alo$alo_mse
-    fitted$alo_mae <- alo$alo_mae
-    fitted$leverage <- alo$leverage
+    class(fit) <- c("alo_glmnet", "alo", class(fitted))
+    fit$alo <- alo$alo
+    fit$alo_mse <- alo$alo_mse
+    fit$alo_mae <- alo$alo_mae
+    fit$leverage <- alo$leverage
 
-    fitted
+    fit
 }
 
 #' Fits and computes the approximate leave-one-out cross validation for glmnet.
