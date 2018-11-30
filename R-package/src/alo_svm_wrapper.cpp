@@ -79,6 +79,9 @@ void compute_kernel_impl(blas_size n, blas_size p, double* X, double* K,
         }
         svm_kernel_polynomial(n, p, X, K, gamma, degree, coef0, use_rfp);
         return;
+    case KernelType::Linear:
+        svm_kernel_linear(n, p, X, K, use_rfp);
+        return;
     default:
         stop("Unknown kernel type.");
     }

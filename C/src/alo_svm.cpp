@@ -265,3 +265,8 @@ void svm_kernel_polynomial(blas_size n, blas_size p, const double* X, double* K,
         }
     }
 }
+
+
+void svm_kernel_linear(blas_size n, blas_size p, const double* X, double* K, bool use_rfp) {
+    compute_gram(n, p, X, n, K, MatrixTranspose::Transpose, use_rfp ? SymmetricFormat::RFP : SymmetricFormat::Full);
+}

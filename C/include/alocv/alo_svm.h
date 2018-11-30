@@ -54,6 +54,17 @@ void svm_kernel_radial(blas_size n, blas_size p, const double* X, double gamma, 
  */
 void svm_kernel_polynomial(blas_size n, blas_size p, const double* X, double* K, double gamma, double degree, double coef0, bool use_rfp = false);
 
+/*! Computes linear kernel for the given input matrix.
+ *
+ * @param n: The number of observations
+ * @param p: The number of predictors.
+ * @param[in] X: The feature matrix (n x p).
+ * @param[out] K: The computed kernel.
+ * @param use_rfp: If true, K is computed in RFP format.
+ *
+ */
+void svm_kernel_linear(blas_size n, blas_size p, const double* X, double* K, bool use_rfp = false);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
