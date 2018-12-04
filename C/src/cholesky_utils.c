@@ -68,7 +68,6 @@ void cholesky_delete_d(blas_size n, blas_size i, double* L, blas_size ldl, doubl
 
 void cholesky_delete_inplace_d(blas_size n, blas_size i, double* L, blas_size ldl) {
     blas_size s22_length = n - i - 1;
-    blas_size one = 1;
 
     double* temp = blas_malloc(16, s22_length * sizeof(double));
     memcpy(temp, L + i * ldl + (i + 1), s22_length * sizeof(double));

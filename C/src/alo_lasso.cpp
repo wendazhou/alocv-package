@@ -20,8 +20,8 @@
  * @param index_added Another optional vector of indices to append to the active predictors.
  * @param[out] W A matrix to copy the predictors to.
  * @param ldw The leading dimension of W, must be at least n.
- * 
- * 
+ *
+ *
  */
 void copy_active_set(blas_size n, const double* A, blas_size lda, bool has_intercept,
                    std::vector<blas_size> const& index_active, std::vector<blas_size> const& index_added,
@@ -52,10 +52,10 @@ namespace {
  * inverse of the covariance of the active set. We do this by maintaining the Cholesky decomposition
  * of the covariance of the active set along the solution path, and update this decomposition iteratively
  * as we go down the solution path.
- * 
+ *
  * For performance reasons, we only append new active coordinates at the end of the decomposition.
  * For this reason, we need to maintain the corresponding ordering of the elements in our decomposition.
- * 
+ *
  * @param[in] n The number of observations (or rows) of A
  * @param[in] A The regression matrix
  * @param[in] lda The leading dimension of A
@@ -72,7 +72,7 @@ namespace {
  */
 void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
                                double* L, blas_size ldl,
-                               double* W, blas_size ldw, 
+                               double* W, blas_size ldw,
                                blas_size len_index, blas_size* index,
                                blas_size len_index_new, blas_size* index_new) {
     // First compute the columns to add and remove from the matrix to update it.
@@ -91,12 +91,12 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
         end_index.begin(), end_index.end(),
         start_index.begin(), start_index.end(),
         std::back_inserter(index_added));
-    
+
     std::set_difference(
         start_index.begin(), start_index.end(),
         end_index.begin(), end_index.end(),
         std::back_inserter(index_removed));
-    
+
     // Delete all unnecessary columns first.
     for(auto i: index_removed) {
         auto it = std::find(active_index.begin(), active_index.end(), i);
@@ -107,7 +107,7 @@ void lasso_update_cholesky_w_d(blas_size n, const double* A, blas_size lda,
     }
 
     copy_active_set(n, A, lda, false, active_index, index_added, W, ldw);
-    
+
     // Precompute the border of the matrix we are appending.
     blas_size num_existing = static_cast<blas_size>(active_index.size());
     blas_size num_added = static_cast<blas_size>(index_added.size());
@@ -214,7 +214,7 @@ void create_w(blas_size n, double* W, blas_size ldw, double* A, blas_size lda, s
     // The index is updated by removing some existing columns, and appending new columns
     // at the end of the representation.
 
-    for(int i = 0; i < current_index.size(); ++i) {
+    for(size_t i = 0; i < current_index.size(); ++i) {
         std::copy(A + current_index[i] * lda, A + current_index[i] * lda + n, W + i * ldw);
     }
 }

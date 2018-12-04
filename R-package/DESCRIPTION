@@ -1,6 +1,6 @@
 Package: alocv
 Title: Approximate Leave-one-out Computation
-Version: 0.0.0.9000
+Version: 0.0.0.9100
 Authors@R: person("Wenda", "Zhou", email = "wz2335@columbia.edu", role = c("aut", "cre"))
 Description: Efficient methods to estimate out of sample risk for penalized generalized linear
     smoothers. Currently supports lasso / elastic-net GLMs and classification SVMs. The formulas
@@ -16,5 +16,8 @@ Imports:
 Suggests:
     glmnet,
     e1071,
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
 RoxygenNote: 6.1.1
+VignetteBuilder: knitr
