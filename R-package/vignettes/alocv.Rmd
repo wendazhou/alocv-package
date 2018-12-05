@@ -45,7 +45,7 @@ y[y >= 0] = 2 * sqrt(y[y >= 0])
 y[y < 0] = -2 * sqrt(-y[y < 0])
 ```
 
-For such a data, even the `glmnet` with its state-of-art implementation needs some time to do the LOOCV:
+For such a dataset, even the `glmnet` with its state-of-art implementation needs some time to compute the LOOCV estimate:
 ```{r, eval = TRUE}
 ptm = proc.time()
 CV_el = cv.glmnet(X, y, alpha = 0.5, nfolds = n, 
