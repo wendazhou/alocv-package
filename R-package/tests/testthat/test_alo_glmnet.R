@@ -144,13 +144,12 @@ make_example_poisson <- function(n, p, eps=0.5, seed=42) {
 }
 
 test_that("alocv correct for poisson enet", {
-    data <- make_example_poisson(20, 10)
+    data <- make_example_poisson(200, 10)
     fitted <- alo_glmnet(data$x, data$y, alpha=0.5, family="poisson",
                          standardize=F, intercept=F, nlambda=10)
 
     expected_alo <- c(
-        1048.6500, 1026.8649, 876.6960, 678.7976, 596.0793, 426.0430,
-        110.0069, 2423.5604, 3020.3248, 3038.5616)
+        50.4877721, 22.6919863, 4.5969231, 1.6150062, 0.9007697, 0.8001190, 0.7931328, 0.7939580, 0.7952803, 0.7954835)
 
     expect_equal(fitted$alo, expected_alo)
 })

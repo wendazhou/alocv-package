@@ -247,10 +247,10 @@ struct PoissonGlmConfig {
 
     struct LossDeviance {
         double operator()(double y, double y_fitted) const {
-            if(y > 0) {
-                return y * log(y) - y + exp(y_fitted) - y * y_fitted;
+            if(y == 0) {
+                return 2 * exp(y_fitted);
             } else {
-                return exp(y_fitted);
+                return 2 * (y * log(y) - y + exp(y_fitted) - y * y_fitted);
             }
         }
     };
@@ -297,7 +297,7 @@ void compute_fitted(blas_size n, blas_size k, const double* XE,
         k += 1;
     }
 
-    for(int i = 0; i < index.size(); ++i) {
+    for(size_t i = 0; i < index.size(); ++i) {
         beta_active[i + has_intercept] = beta[index[i]];
     }
 
