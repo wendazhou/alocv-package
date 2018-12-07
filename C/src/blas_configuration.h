@@ -74,7 +74,7 @@ static inline void* blas_malloc(blas_size alignment, blas_size size) {
 }
 
 static inline void blas_free(void* ptr) {
-    return _aligned_free(ptr);
+    _aligned_free(ptr);
 }
 
 #else // _WIN32 || _WIN64

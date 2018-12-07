@@ -1,7 +1,9 @@
 Package: alocv
 Title: Approximate Leave-one-out Computation
 Version: 0.0.0.9100
-Authors@R: person("Wenda", "Zhou", email = "wz2335@columbia.edu", role = c("aut", "cre"))
+Authors@R: c(person("Wenda", "Zhou", email = "wz2335@columbia.edu", role = c("aut", "cre")),
+    person("Peng", "Xu", email = "px2132@columbia.edu", role = "aut"),
+    person("Linyun", "He", email = "lh2870@columbia.edu", role = "ctb"))
 Description: Efficient methods to estimate out of sample risk for penalized generalized linear
     smoothers. Currently supports lasso / elastic-net GLMs and classification SVMs. The formulas
     are based on leave-one-out approximations as described in the paper linked in the URL below.

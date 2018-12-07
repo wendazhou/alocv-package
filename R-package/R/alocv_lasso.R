@@ -45,7 +45,7 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
     alo <- alo_glmnet_internal(x, fit$beta, y, fit$lambda, family, alpha,
                                fit$a0, standardize, intercept, lasso_approximate_intercept)
 
-    class(fit) <- c("alo_glmnet", "alo", class(fitted))
+    class(fit) <- c("alo_glmnet", "alo", class(fit))
     fit$alo <- alo$alo
     fit$alo_mse <- alo$alo_mse
     fit$alo_mae <- alo$alo_mae
