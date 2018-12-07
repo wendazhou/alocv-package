@@ -1,0 +1,19 @@
+citHeader("To cite alocv in publications please use:")
+
+citEntry(
+    entry="Article",
+    title="Approximate Leave-One-Out for Fast Parameter Selection Tuning in High Dimension",
+    author=personList(
+        as.person("Shuaiwen Wang"),
+        as.person("Wenda Zhou"),
+        as.person("Haihao Lu"),
+        as.person("Arian Maleki")),
+    journal="International Conference on Machine Learning",
+    year="2018",
+    url="http://proceedings.mlr.press/v80/wang18m.html",
+    volume="80",
+    textVersion =
+        paste("S. Wang, W. Zhou et al. (2018).",
+              "Approximate Leave-One-Out for Fast Parameter Selection Tuning.",
+              "International Conference on Machine Learning.")
+)
