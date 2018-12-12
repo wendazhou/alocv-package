@@ -19,6 +19,7 @@ Suggests:
     glmnet,
     e1071,
     testthat,
+    withr,
     knitr,
     rmarkdown
 RoxygenNote: 6.1.1

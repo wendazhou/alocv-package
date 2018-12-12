@@ -45,32 +45,60 @@ y[y >= 0] = 2 * sqrt(y[y >= 0])
 y[y < 0] = -2 * sqrt(-y[y < 0])
 ```
 
-For such a dataset, even the `glmnet` with its state-of-art implementation needs some time to compute the LOOCV estimate:
+For such a dataset, even the package `glmnet` with its state-of-art implementation needs some time to compute the LOOCV estimate:
 ```{r, eval = TRUE}
 ptm = proc.time()
 CV_el = cv.glmnet(X, y, alpha = 0.5, nfolds = n, 
                   grouped = F, intercept = T, standardize = T, type.measure = "mse")
 proc.time() - ptm
 ```
-In comparison, `alocv` requires only fractions of a second to produce an LOOCV estimation:
-
+In comparison, `alocv` requires only fractions of a second to produce an LOOCV estimate:
 
 ```{r, eval = TRUE}
 ptm = proc.time()
 GLM_el = glmnet(X, y, lambda = CV_el$lambda, alpha = 0.5, intercept = T, standardize = T)
-ALO_el = alo_glmnet(X, y, alpha=0.5, standardize=T, intercept=T)
+
+ALO_el = alocv(GLM_el, X, y, alpha = 0.5)
+
 proc.time() - ptm
 ```
 Not only that, the estimation is very accurate, as compared to the true LOOCV risk:
 
 ```{r}
-plot(CV_el$cvm, xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange")
-lines(ALO_el$alo, type = "b", pch = 4, lwd = 2, col = 4)
+plot(CV_el$lambda, CV_el$cvm, xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange", log = "x")
+lines(CV_el$lambda, ALO_el$alo, type = "b", pch = 4, lwd = 2, col = 4)
+legend("topright", legend=c("LOOCV", "ALO"), lty=c(1, 4), col = c("darkorange", 4))
 ```
 
 ## Usage with `e1071`
+Our cross-validation method is also implemented for SVMs through the `e1071`
+package. Currently, we only support two-class (kernel) C-SVMs. For example,
+we consider a classification version of the previous problem. We then fit
+the svm for 50 different values of the cost parameter and plot the result.
+
+```{r}
+n2 <- round(n / 2)
+X <- matrix(rnorm(n / 2 * p), nrow=n, ncol=p)
+X[1:n2,] <- X[1:n2,] + 2.5
+X[(n2+1):n,] <- X[(n2+1):n,] - 2.5
+y <- c(rep(1, n/2), rep(-1, n/2 - 1), 1)
+
+fits <- lapply(cost_values,
+               function(c) alocv::alo_svm(
+                 X, y, type='C-classification',
+                 kernel='radial', cost=c))
+
+alo_values <- sapply(fits, function(f) f$alo_loss)
+```
+
+```{r}
+plot(cost_values, alo_values, log="x", 'l', xlab="Cost", ylab="ALO")
+```
+
+As SVM fits can be quite slow, whereas the ALO computation is comparably
+instant, this can also be an alternative to standard 5-fold cross-validation.
+
 
 ## Reference
-K. Rahnama Rad, A. Maleki (2018). [*A scalable estimate of the extra-sample prediction error via approximate leave-one-out*](https://arxiv.org/abs/1801.10243).
 
 S. Wang, W. Zhou, H. Lu, A. Maleki, and V. Mirrokni (2018). [*Approximate Leave-One-Out Approximatet for Fast Parameter Tuning in High Dimensions*](https://arxiv.org/abs/1807.02694).

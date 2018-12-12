@@ -64,8 +64,32 @@ test_that("ALO SVM Correct for with S3 method and pivoting", {
 test_that("Kernel Correct for Polynomial", {
     df <- make_example(20, 10)
 
-    K <- alocv:::compute_svm_kernel(df$X, 1, 0.5, 3, 1.5);
+    K <- alocv:::compute_svm_kernel(df$X, 1, 0.5, 3, 1.5)
     expected <- as.matrix(tril((0.5 * tcrossprod(df$X) + 1.5)^3))
 
     expect_equal(matrix(K), matrix(expected))
+})
+
+test_that("Kernel Correct for RBF", {
+    df <- make_example(20, 10)
+
+    K <- alocv:::compute_svm_kernel(df$X, 0, 0.5, 0, 0)
+    expected <- as.matrix(tril(exp(- 0.5 * as.matrix(dist(df$X, diag = T)) ^ 2)))
+
+    expect_equal(matrix(K), matrix(expected))
+})
+
+test_that("Kernel Compatible With SVM", {
+    df <- make_example(20, 10)
+
+    K <- alocv:::compute_svm_kernel(df$X, 0, 0.5, 0, 0)
+    fit_svm <- e1071::svm(df$X, df$y, gamma=0.5, scale=FALSE)
+
+    alpha <- numeric(nrow(df$X))
+    alpha[fit_svm$index] <- fit_svm$coefs
+
+    K <- K + t(as.matrix(tril(K, -1)))
+
+    decision_computed <- as.vector(K %*% alpha - fit_svm$rho)
+    expect_equal(decision_computed, as.numeric(fit_svm$decision.values))
 })
