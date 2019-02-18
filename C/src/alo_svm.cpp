@@ -335,7 +335,7 @@ void svr_compute_alo(blas_size n, double* K, const double* y, const double* alph
         std::transform(a_slack, a_slack + n, y_hat, alo_predicted, std::plus<double>{});
     }
 
-    // epsilon insensitive-loss
+    // epsilon-insensitive loss
     if(alo_eps) {
         double accumulator = 0;
 
