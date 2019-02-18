@@ -57,7 +57,7 @@ List alo_svm_kernel_rcpp(NumericMatrix K, NumericVector y, NumericVector alpha,
     NumericVector alo_predicted(n);
     double alo_hinge_loss;
 
-    svm_compute_alo(n, k_copy.get(), &y[0], &alpha[0], rho, lambda, tolerance,
+    svc_compute_alo(n, k_copy.get(), &y[0], &alpha[0], rho, lambda, tolerance,
                     &alo_predicted[0], &alo_hinge_loss, use_rfp, use_pivot);
 
     return Rcpp::List::create(
@@ -89,8 +89,8 @@ void compute_kernel_impl(blas_size n, blas_size p, double* X, double* K,
 
 // [[Rcpp::export]]
 NumericMatrix compute_svm_kernel(NumericMatrix X, int kernel_type,
-                             double gamma, double degree, double coef0,
-                             bool use_rfp=false) {
+                                 double gamma, double degree, double coef0,
+                                 bool use_rfp=false) {
     NumericMatrix output;
 
     auto n = X.nrow();
@@ -104,13 +104,13 @@ NumericMatrix compute_svm_kernel(NumericMatrix X, int kernel_type,
     }
 
     compute_kernel_impl(n, X.ncol(), &X(0, 0), &output(0, 0),
-        kernel_type, gamma, degree, coef0, use_rfp);
+                        kernel_type, gamma, degree, coef0, use_rfp);
 
     return output;
 }
 
 // [[Rcpp::export]]
-List alo_svm_rcpp(
+List alo_svc_rcpp(
         NumericMatrix X, NumericVector y, NumericVector alpha,
         double rho, double lambda, int kernel_type,
         double gamma, double degree, double coef0,
@@ -136,11 +136,47 @@ List alo_svm_rcpp(
     NumericVector alo_predicted(n);
     double alo_hinge_loss;
 
-    svm_compute_alo(n, K.get(), &y[0], &alpha[0], rho, lambda, tolerance,
+    svc_compute_alo(n, K.get(), &y[0], &alpha[0], rho, lambda, tolerance,
         &alo_predicted[0], &alo_hinge_loss, use_rfp, use_pivot);
 
     return Rcpp::List::create(
         Rcpp::Named("predicted") = alo_predicted,
         Rcpp::Named("loss") = alo_hinge_loss
+    );
+}
+
+// [[Rcpp::export]]
+List alo_svr_rcpp(
+        NumericMatrix X, NumericVector y, NumericVector alpha,
+        double rho, double lambda, double epsilon, int kernel_type,
+        double gamma, double degree, double coef0,
+        double tolerance = 1e-5, bool use_rfp = false, bool use_pivot = false) {
+
+    blas_size n = y.size();
+
+    if (X.nrow() != n) {
+        Rcpp::stop("Feature matrix X and predictor matrix y are not compatible.");
+    }
+
+    if (n != alpha.size()) {
+        Rcpp::stop("Fitted vector alpha is not of the expected size.");
+    }
+
+    auto num_elements = use_rfp ? n * (n + 1) / 2 : n * n;
+    auto K = std::unique_ptr<double[]>(new double[num_elements]);
+    std::fill(K.get(), K.get() + num_elements, 0.0);
+
+    compute_kernel_impl(n, X.ncol(), &X(0, 0), K.get(),
+                        kernel_type, gamma, degree, coef0, use_rfp);
+
+    NumericVector alo_predicted(n);
+    double alo_eps_loss;
+
+    svr_compute_alo(n, K.get(), &y[0], &alpha[0], rho, lambda, epsilon, tolerance,
+                    &alo_predicted[0], &alo_eps_loss, use_rfp, use_pivot);
+
+    return Rcpp::List::create(
+        Rcpp::Named("predicted") = alo_predicted,
+        Rcpp::Named("loss") = alo_eps_loss
     );
 }

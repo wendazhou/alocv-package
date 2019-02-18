@@ -46,7 +46,11 @@ compute_svm_kernel <- function(X, kernel_type, gamma, degree, coef0, use_rfp = F
     .Call('_alocv_compute_svm_kernel', PACKAGE = 'alocv', X, kernel_type, gamma, degree, coef0, use_rfp)
 }
 
-alo_svm_rcpp <- function(X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance = 1e-5, use_rfp = FALSE, use_pivot = FALSE) {
-    .Call('_alocv_alo_svm_rcpp', PACKAGE = 'alocv', X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot)
+alo_svc_rcpp <- function(X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance = 1e-5, use_rfp = FALSE, use_pivot = FALSE) {
+    .Call('_alocv_alo_svc_rcpp', PACKAGE = 'alocv', X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot)
+}
+
+alo_svr_rcpp <- function(X, y, alpha, rho, lambda, epsilon, kernel_type, gamma, degree, coef0, tolerance = 1e-5, use_rfp = FALSE, use_pivot = FALSE) {
+    .Call('_alocv_alo_svr_rcpp', PACKAGE = 'alocv', X, y, alpha, rho, lambda, epsilon, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot)
 }
 
