@@ -20,7 +20,7 @@ TEST_CASE("ALO SVM Correct", "[SVM]") {
     auto k_copy = blas_unique_alloc<double>(16, n * n);
     std::copy(K, K + n * n, k_copy.get());
 
-    svm_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge);
+    svc_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge);
 
     REQUIRE(alo_hinge == Approx(expected_hinge));
 
@@ -39,7 +39,7 @@ TEST_CASE("ALO SVM Correct for RFP format", "[SVM]") {
 
 	REQUIRE(info == 0);
 
-	svm_compute_alo(n, K_rfp.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, true);
+	svc_compute_alo(n, K_rfp.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, true);
 
     REQUIRE(alo_hinge == Approx(expected_hinge));
 
@@ -54,7 +54,7 @@ TEST_CASE("ALO SVM Correct For Triangular", "[SVM]") {
     auto k_copy = blas_unique_alloc<double>(16, n * n);
 	dlacpy("L", &n, &n, K, &n, k_copy.get(), &n);
 
-    svm_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, false, false);
+    svc_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, false, false);
 
     REQUIRE(alo_hinge == Approx(expected_hinge));
 
@@ -70,7 +70,7 @@ TEST_CASE("ALO SVM Correct For Triangular with Pivoting", "[SVM]") {
     auto k_copy = blas_unique_alloc<double>(16, n * n);
 	dlacpy("L", &n, &n, K, &n, k_copy.get(), &n);
 
-    svm_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, false, true);
+    svc_compute_alo(n, k_copy.get(), y, alpha, rho, lambda, 1e-5, leverage, &alo_hinge, false, true);
 
     REQUIRE(alo_hinge == Approx(expected_hinge));
 
