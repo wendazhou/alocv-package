@@ -79,6 +79,18 @@ alocv.svm <- function(fit, x, y, tolerance=1e-5, use_rfp=TRUE, use_pivot=FALSE, 
     fit
 }
 
+#' Approximate Leave-one-out cross validation for SVM objects
+#'
+#' @param fit The fitted svm object.
+#' @param x The data matrix.
+#' @param y The response vector.
+#' @param tolerance The tolerance to use in detecting support vectors.
+#' @param use_rfp Whether to use rectangular full packed format to represent the kernel. Reduces memory usage.
+#' @param use_pivot Whether to use pivoted Cholesky decomposition. Set this to true when the kernel
+#' is not strictly positive-definite.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @export
 alo_svm_internal <- function(x, y, alpha, rho, lambda, kernel = "radial",
                              gamma = if(is.vector(x)) 1 else 1 / ncol(x),
                              degree = 3, coef0 = 0, tolerance=1e-4,
@@ -93,7 +105,7 @@ alo_svm_internal <- function(x, y, alpha, rho, lambda, kernel = "radial",
         warning("Both use_rfp and use_pivot are specified")
     }
 
-    alo_info <- alo_svm_rcpp(x, y, alpha, rho, lambda, kernel_type - 1, gamma, degree, coef0,
+    alo_info <- alo_svc_rcpp(x, y, alpha, rho, lambda, kernel_type - 1, gamma, degree, coef0,
                              tolerance, use_rfp, use_pivot)
 
     alo_info

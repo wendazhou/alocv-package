@@ -72,9 +72,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// alo_svm_rcpp
-List alo_svm_rcpp(NumericMatrix X, NumericVector y, NumericVector alpha, double rho, double lambda, int kernel_type, double gamma, double degree, double coef0, double tolerance, bool use_rfp, bool use_pivot);
-RcppExport SEXP _alocv_alo_svm_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP, SEXP use_pivotSEXP) {
+// alo_svc_rcpp
+List alo_svc_rcpp(NumericMatrix X, NumericVector y, NumericVector alpha, double rho, double lambda, int kernel_type, double gamma, double degree, double coef0, double tolerance, bool use_rfp, bool use_pivot);
+RcppExport SEXP _alocv_alo_svc_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP, SEXP use_pivotSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -90,7 +90,30 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
     Rcpp::traits::input_parameter< bool >::type use_pivot(use_pivotSEXP);
-    rcpp_result_gen = Rcpp::wrap(alo_svm_rcpp(X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot));
+    rcpp_result_gen = Rcpp::wrap(alo_svc_rcpp(X, y, alpha, rho, lambda, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot));
+    return rcpp_result_gen;
+END_RCPP
+}
+// alo_svr_rcpp
+List alo_svr_rcpp(NumericMatrix X, NumericVector y, NumericVector alpha, double rho, double lambda, double epsilon, int kernel_type, double gamma, double degree, double coef0, double tolerance, bool use_rfp, bool use_pivot);
+RcppExport SEXP _alocv_alo_svr_rcpp(SEXP XSEXP, SEXP ySEXP, SEXP alphaSEXP, SEXP rhoSEXP, SEXP lambdaSEXP, SEXP epsilonSEXP, SEXP kernel_typeSEXP, SEXP gammaSEXP, SEXP degreeSEXP, SEXP coef0SEXP, SEXP toleranceSEXP, SEXP use_rfpSEXP, SEXP use_pivotSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< int >::type kernel_type(kernel_typeSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< double >::type degree(degreeSEXP);
+    Rcpp::traits::input_parameter< double >::type coef0(coef0SEXP);
+    Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_rfp(use_rfpSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_pivot(use_pivotSEXP);
+    rcpp_result_gen = Rcpp::wrap(alo_svr_rcpp(X, y, alpha, rho, lambda, epsilon, kernel_type, gamma, degree, coef0, tolerance, use_rfp, use_pivot));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -100,7 +123,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_alocv_alo_enet_rcpp", (DL_FUNC) &_alocv_alo_enet_rcpp, 9},
     {"_alocv_alo_svm_kernel_rcpp", (DL_FUNC) &_alocv_alo_svm_kernel_rcpp, 8},
     {"_alocv_compute_svm_kernel", (DL_FUNC) &_alocv_compute_svm_kernel, 6},
-    {"_alocv_alo_svm_rcpp", (DL_FUNC) &_alocv_alo_svm_rcpp, 12},
+    {"_alocv_alo_svc_rcpp", (DL_FUNC) &_alocv_alo_svc_rcpp, 12},
+    {"_alocv_alo_svr_rcpp", (DL_FUNC) &_alocv_alo_svr_rcpp, 13},
     {NULL, NULL, 0}
 };
 
