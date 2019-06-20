@@ -33,8 +33,8 @@ void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, dou
 }
 
 /*! Computes the Cholesky decomposition of the matrix in RFP format. */
-int compute_cholesky(blas_size p, double* L, SymmetricFormat format) {
-    int info;
+blas_size compute_cholesky(blas_size p, double* L, SymmetricFormat format) {
+    blas_size info;
 
     if(format == SymmetricFormat::Full) {
         dpotrf("L", &p, L, &p, &info);

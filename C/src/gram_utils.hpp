@@ -38,7 +38,7 @@ void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, dou
  * @param L[in, out] The matrix for which to compute the Cholesky decomposition.
  * 
  */
-int compute_cholesky(blas_size p, double* L, SymmetricFormat format);
+blas_size compute_cholesky(blas_size p, double* L, SymmetricFormat format);
 
 /*! Solves the triangular inverse problem for the given matrix.
  *

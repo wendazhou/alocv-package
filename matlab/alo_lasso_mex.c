@@ -51,5 +51,5 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         leverage = matlab_get_doubles(plhs[1]);
     }
 
-    lasso_compute_alo_d(n, p, num_tuning, A, n, B, p, y, 1, tolerance, alo, leverage);
+    lasso_compute_alo_d(n, p, num_tuning, A, n, B, p, y, 1, NULL, tolerance, alo, leverage);
 }
