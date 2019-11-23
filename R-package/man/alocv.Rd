@@ -3,7 +3,6 @@
 \docType{package}
 \name{alocv}
 \alias{alocv}
-\alias{alocv-package}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
 \usage{
 alocv(fit, x, y, ...)

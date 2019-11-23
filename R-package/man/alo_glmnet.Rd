@@ -4,11 +4,23 @@
 \alias{alo_glmnet}
 \title{Fits and computes the approximate leave-one-out cross validation for glmnet.}
 \usage{
-alo_glmnet(x, y, family = c("gaussian", "binomial", "poisson"), weights,
-  offset = NULL, alpha = 1, nlambda = 100,
-  lambda.min.ratio = ifelse(nobs < nvars, 0.01, 1e-04), lambda = NULL,
-  standardize = TRUE, intercept = TRUE, thresh = 1e-07,
-  dfmax = nvars + 1, ..., lasso_approximate_intercept = TRUE)
+alo_glmnet(
+  x,
+  y,
+  family = c("gaussian", "binomial", "poisson"),
+  weights,
+  offset = NULL,
+  alpha = 1,
+  nlambda = 100,
+  lambda.min.ratio = ifelse(nobs < nvars, 0.01, 1e-04),
+  lambda = NULL,
+  standardize = TRUE,
+  intercept = TRUE,
+  thresh = 1e-07,
+  dfmax = nvars + 1,
+  ...,
+  lasso_approximate_intercept = TRUE
+)
 }
 \arguments{
 \item{x}{The data matrix.}

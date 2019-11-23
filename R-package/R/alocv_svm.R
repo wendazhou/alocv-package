@@ -17,7 +17,7 @@
 #' @param ... Additional parameters to be passed to the underlying SVM fit function.
 #'
 #' @seealso \code{\link[e1071]{svm}}
-#'
+#' @importFrom e1071 svm
 #' @export
 alo_svm <- function(x, y, scale = TRUE, type = NULL,
                     kernel = "radial", degree = 3, gamma = if(is.vector(x)) 1 else 1 / ncol(x),
@@ -26,8 +26,9 @@ alo_svm <- function(x, y, scale = TRUE, type = NULL,
     if (!requireNamespace("e1071", quietly = TRUE)) {
         stop("Package \"e1071\" is required for this function to work. Please install it.", call. = FALSE)
     }
-    fit <- e1071::svm(x, y, scale=scale, type=type, kernel=kernel, degree=degree, gamma=gamma,
-                      coef0=coef0, cost=cost, tolerance=tolerance, ...)
+
+    fit <- svm(x, y, scale=scale, type=type, kernel=kernel, degree=degree, gamma=gamma,
+               coef0=coef0, cost=cost, tolerance=tolerance, ...)
 
     alocv.svm(fit, x, y, tolerance=tolerance, use_rfp=use_rfp, use_pivot=use_pivot)
 }
@@ -52,6 +53,18 @@ alocv.svm <- function(fit, x, y, tolerance=1e-5, use_rfp=TRUE, use_pivot=FALSE, 
         x <- base::scale(x, center=fit$x.scale$`scaled:center`,
                          scale=fit$x.scale$`scaled:scale`)
     }
+
+    # convert y to factors first, if not already
+    # note e1071::svm will convert it internally for classification,
+    # but e1071::tune.svm won't!
+    if (!is.factor(y)) {
+        y = as.factor(y)
+    }
+
+    # convert factors back to numeric -1, 1
+    # as in LIBSVM the first element must be 1
+    y = 3 - 2 * as.numeric(y)
+    y = y * y[1]
 
     kernel <- c("linear", "polynomial", "radial", "sigmoid")[fit$kernel + 1]
 

@@ -84,7 +84,7 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
 #' \item{leverage}{A numerical matrix representing the computed leverage of each data point for each tuning value.}
 #'
 #' @seealso \code{\link[glmnet]{glmnet}}
-#'
+#' @importFrom glmnet glmnet
 #' @export
 alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
                        weights, offset=NULL, alpha=1, nlambda=100,
@@ -100,9 +100,9 @@ alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
     if (!requireNamespace("glmnet", quietly = TRUE)) {
         stop("Package \"glmnet\" is required for this function to work. Please install it.", call. = FALSE)
     }
-    fitted <- glmnet::glmnet(x, y, family, weights, offset, alpha, nlambda,
-                             lambda.min.ratio, lambda, standardize, intercept,
-                             thresh, dfmax, ...)
+    fitted <- glmnet(x, y, family, weights, offset, alpha, nlambda,
+                     lambda.min.ratio, lambda, standardize, intercept,
+                     thresh, dfmax, ...)
 
     alo <- alo_glmnet_internal(x, fitted$beta, y, fitted$lambda, family,
                                alpha, fitted$a0, standardize, intercept, lasso_approximate_intercept)

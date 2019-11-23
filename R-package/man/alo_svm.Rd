@@ -4,10 +4,22 @@
 \alias{alo_svm}
 \title{Fits and computes the approximate cross-validation for SVMs.}
 \usage{
-alo_svm(x, y, scale = TRUE, type = NULL, kernel = "radial",
-  degree = 3, gamma = if (is.vector(x)) 1 else 1/ncol(x), coef0 = 0,
-  cost = 1, nu = 0.5, tolerance = 1e-04, use_rfp = TRUE,
-  use_pivot = FALSE, ...)
+alo_svm(
+  x,
+  y,
+  scale = TRUE,
+  type = NULL,
+  kernel = "radial",
+  degree = 3,
+  gamma = if (is.vector(x)) 1 else 1/ncol(x),
+  coef0 = 0,
+  cost = 1,
+  nu = 0.5,
+  tolerance = 1e-04,
+  use_rfp = TRUE,
+  use_pivot = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{The data matrix}

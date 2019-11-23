@@ -3,7 +3,9 @@ Title: Approximate Leave-one-out Computation
 Version: 0.0.0.9100
 Authors@R: c(person("Wenda", "Zhou", email = "wz2335@columbia.edu", role = c("aut", "cre")),
     person("Peng", "Xu", email = "px2132@columbia.edu", role = "aut"),
-    person("Linyun", "He", email = "lh2870@columbia.edu", role = "ctb"))
+    person("Linyun", "He", email = "ljh5602@psu.edu", role = "ctb"),
+    person("Wanchao", "Qin", email = "wq2137@columbia.edu", role = "ctb"),
+    person("Yuze", "Zhou", email = "yz909@scarletmail.rutgers.edu", role = "ctb"))
 Description: Efficient methods to estimate out of sample risk for penalized generalized linear
     smoothers. Currently supports lasso / elastic-net GLMs and classification SVMs. The formulas
     are based on leave-one-out approximations as described in the paper linked in the URL below.
@@ -22,5 +24,5 @@ Suggests:
     withr,
     knitr,
     rmarkdown
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.0
 VignetteBuilder: knitr
