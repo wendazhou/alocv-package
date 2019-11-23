@@ -4,9 +4,20 @@
 \alias{alo_svm_internal}
 \title{Approximate Leave-one-out cross validation for SVM objects}
 \usage{
-alo_svm_internal(x, y, alpha, rho, lambda, kernel = "radial",
-  gamma = if (is.vector(x)) 1 else 1/ncol(x), degree = 3, coef0 = 0,
-  tolerance = 1e-04, use_rfp = TRUE, use_pivot = FALSE)
+alo_svm_internal(
+  x,
+  y,
+  alpha,
+  rho,
+  lambda,
+  kernel = "radial",
+  gamma = if (is.vector(x)) 1 else 1/ncol(x),
+  degree = 3,
+  coef0 = 0,
+  tolerance = 1e-04,
+  use_rfp = TRUE,
+  use_pivot = FALSE
+)
 }
 \arguments{
 \item{x}{The data matrix.}

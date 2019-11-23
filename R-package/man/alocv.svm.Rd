@@ -4,8 +4,7 @@
 \alias{alocv.svm}
 \title{Approximate Leave-one-out cross validation for SVM objects}
 \usage{
-\method{alocv}{svm}(fit, x, y, tolerance = 1e-05, use_rfp = TRUE,
-  use_pivot = FALSE, ...)
+\method{alocv}{svm}(fit, x, y, tolerance = 1e-05, use_rfp = TRUE, use_pivot = FALSE, ...)
 }
 \arguments{
 \item{fit}{The fitted svm object.}

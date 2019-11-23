@@ -6,8 +6,17 @@
 Note that this function is significantly slower than \code{\link{alo_lasso_rcpp}}
 for large problems, as it must solve each problem separately.}
 \usage{
-alo_enet_rcpp(A, B, y, lambda, family = 0L, alpha = 1, a0 = NULL,
-  tolerance = 1e-05, use_rfp = TRUE)
+alo_enet_rcpp(
+  A,
+  B,
+  y,
+  lambda,
+  family = 0L,
+  alpha = 1,
+  a0 = NULL,
+  tolerance = 1e-05,
+  use_rfp = TRUE
+)
 }
 \arguments{
 \item{A}{The predictor matrix}
