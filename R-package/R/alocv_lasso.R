@@ -87,7 +87,7 @@ alocv.glmnet <- function(fit, x, y, alpha=NULL, standardize=NULL, intercept=NULL
 #'
 #' @export
 alo_glmnet <- function(x, y, family=c("gaussian", "binomial", "poisson"),
-                       weights, offset=NULL, alpha=1, nlambda=100,
+                       weights=NULL, offset=NULL, alpha=1, nlambda=100,
                        lambda.min.ratio = ifelse(nobs<nvars,0.01, 0.0001),
                        lambda=NULL, standardize=TRUE, intercept=TRUE, thresh=1e-7,
                        dfmax = nvars + 1, ..., lasso_approximate_intercept=TRUE) {

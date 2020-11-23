@@ -4,8 +4,18 @@
 \alias{alo_glmnet_internal}
 \title{Internal code to compute ALO for Lasso / elastic net problems.}
 \usage{
-alo_glmnet_internal(x, beta, y, lambda, family, alpha, a0, standardize,
-  intercept, lasso_approximate_intercept = FALSE)
+alo_glmnet_internal(
+  x,
+  beta,
+  y,
+  lambda,
+  family,
+  alpha,
+  a0,
+  standardize,
+  intercept,
+  lasso_approximate_intercept = FALSE
+)
 }
 \arguments{
 \item{x}{The data matrix}

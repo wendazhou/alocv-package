@@ -45,73 +45,68 @@
 #include <lapack.h>
 #endif
 
-#ifdef USE_MKL
-static inline void* blas_malloc(blas_size alignment, blas_size size) {
-    return mkl_malloc(size, alignment);
-}
+#ifdef __APPLE__
+#include <AvailabilityMacros.h>
+#endif
 
-static inline void blas_free(void* ptr) {
-    mkl_free(ptr);
-}
+#ifdef USE_MKL
+static inline void *blas_malloc(blas_size alignment, blas_size size) { return mkl_malloc(size, alignment); }
+
+static inline void blas_free(void *ptr) { mkl_free(ptr); }
 #elif MATLAB_MEX_FILE
 #include "mex.h"
 
-static inline void* blas_malloc(blas_size alignment, blas_size size) {
-    return mxMalloc(size);
-}
+static inline void *blas_malloc(blas_size alignment, blas_size size) { return mxMalloc(size); }
 
-static inline void blas_free(void* ptr) {
-    mxFree(ptr);
-}
+static inline void blas_free(void *ptr) { mxFree(ptr); }
 #else
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_ISOC11_SOURCE) && ((!defined(MAC_OS_X_VERSION_MIN_REQUIRED)) || (MAC_OS_X_VERSION_MIN_REQUIRED >= 101500))
 
-// on windows use platform-specific _aligned_malloc
-#include <malloc.h>
-static inline void* blas_malloc(blas_size alignment, blas_size size) {
-    return _aligned_malloc(size, alignment);
-}
-
-static inline void blas_free(void* ptr) {
-    _aligned_free(ptr);
-}
-
-#else // _WIN32 || _WIN64
 #include <stdlib.h>
 
-static inline void* blas_malloc(blas_size alignment, blas_size size) {
+static inline void *blas_malloc(blas_size alignment, blas_size size) {
     return aligned_alloc(alignment, alignment * (size + alignment - 1) / alignment);
 }
 
-static inline void blas_free(void* ptr) {
-    free(ptr);
-}
+static inline void blas_free(void *ptr) { free(ptr); }
+
+#elif defined(_WIN32) || defined(_WIN64)
+
+// on windows use platform-specific _aligned_malloc
+#include <malloc.h>
+static inline void *blas_malloc(blas_size alignment, blas_size size) { return _aligned_malloc(size, alignment); }
+
+static inline void blas_free(void *ptr) { _aligned_free(ptr); }
+
+#else // _WIN32 || _WIN64
+
+#include <stdlib.h>
+static inline void *blas_malloc(blas_size alignment, blas_size size) { return malloc(size); }
+
+static inline void blas_free(void *ptr) { free(ptr); }
+
 #endif // _WIN32 || _WIN64
 
 #endif // platform specific allocation
 
 #ifdef WENDA_RFP_ENABLE_SHIMS
-// If the platform requires RFP shims, we also include the file for compatibility.
+// If the platform requires RFP shims, we also include the file for
+// compatibility.
 #include "rfp_shims.h"
 #endif
 
 #ifdef __cplusplus
 #include <memory>
 
-template<typename T>
-struct blas_deleter {
-	void operator()(T* ptr) const {
-		blas_free(ptr);
-	}
+template <typename T> struct blas_deleter {
+    void operator()(T *ptr) const { blas_free(ptr); }
 };
 
-template<typename T>
-using unique_aligned_array = std::unique_ptr<T[], blas_deleter<T>>;
+template <typename T> using unique_aligned_array = std::unique_ptr<T[], blas_deleter<T>>;
 
-template<typename T>
-unique_aligned_array<T> blas_unique_alloc(blas_size alignment, blas_size count) noexcept {
-	return unique_aligned_array<T>(static_cast<T*>(blas_malloc(alignment, count * sizeof(T))));
+template <typename T> unique_aligned_array<T> blas_unique_alloc(blas_size alignment, blas_size count) noexcept {
+    return unique_aligned_array<T>(static_cast<T *>(blas_malloc(alignment, count * sizeof(T))));
 }
 #endif
 

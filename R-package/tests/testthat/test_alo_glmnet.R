@@ -12,23 +12,6 @@ make_example <- function(n, p, eps=0.5, seed=42) {
     df
 }
 
-test_that("alocv correct for pure lasso", {
-    df <- make_example(20, 10)
-
-    fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=F)
-
-    expected_alo <- c(
-        7.99425746, 7.96533423, 7.05010423, 6.29263845, 8.95506254, 7.85682146, 6.93893283,
-        6.88841325, 5.80323213, 4.90017479, 4.14858414, 3.52290875, 3.00192071, 2.88942461,
-        2.41472635, 2.01948633, 1.69060507, 1.41688237, 1.18911446, 0.99935316, 0.84129565,
-        0.70960499, 0.59984618, 0.50833351, 0.43200365, 0.36831032, 0.31513675, 0.27072300,
-        0.23360563, 0.20256755, 0.17659637, 0.15484985, 0.13662711, 0.12134486, 0.10851747,
-        0.09776550, 0.08869874, 0.12607060, 0.10514547)
-
-    expect_equal(fitted$alo, expected_alo)
-})
-
-
 test_that("alocv correct for pure lasso with intercept", {
     df <- make_example(20, 10)
     fitted <- alo_glmnet(df$x, df$y, standardize=F, intercept=T, nlambda = 10, lasso_approximate_intercept = F)
@@ -46,37 +29,6 @@ test_that("alocv reasonable for pure lasso with intercept approximation", {
     expected_alo <- c(8.83262606, 3.96686767, 0.69026271, 0.13926358, 0.04274022, 0.06060158)
 
     expect_true(all(fitted$alo <= expected_alo))
-})
-
-
-test_that("alocv correct for pure lasso standardized", {
-    data <- make_example(20, 10)
-
-    fitted <- alo_glmnet(data$x, data$y, standardize=T, intercept=F)
-
-    expected_alo <- c(
-        7.9942575, 7.9653342, 7.0501042, 6.2926385, 5.6659404, 5.1476158, 4.7190896, 4.3649561,
-        6.5783847, 6.5459256, 5.5194123, 4.6650211, 3.9537914, 3.3615857, 3.2191761, 2.6893969,
-        2.2483955, 1.8814448, 1.5760456, 1.3218141, 1.1102441, 0.9339077, 0.7869927, 0.6645501,
-        0.5624666, 0.4773238, 0.4062802, 0.3469738, 0.2974405, 0.2560475, 0.2214365, 0.1924780,
-        0.1682321, 0.1479168, 0.1308814, 0.1165839, 0.1045733, 0.1607124, 0.1337638, 0.1114902)
-
-    expect_equal(fitted$alo, expected_alo)
-})
-
-test_that("alocv correct for enet", {
-    data <- make_example(20, 10)
-    fitted <- alo_glmnet(data$x, data$y, alpha=0.5, standardize = F, intercept = F)
-
-    expected_alo <- c(
-        7.99425746, 7.97638407, 7.48546299, 8.83797445, 8.14316542, 7.50085689, 6.91023835,
-        6.65427600, 5.93225331, 5.27635857, 4.68358981, 4.58142479, 4.00174016, 3.48614370,
-        3.02956209, 2.62687289, 2.27307474, 1.96335670, 1.69315124, 1.45817222, 1.25443925,
-        1.07829061, 0.92638627, 0.79570324, 0.68352468, 0.58742466, 0.50524972, 0.43509858,
-        0.37530088, 0.32439574, 0.28111079, 0.24434201, 0.21313473, 0.18666608, 0.16422875,
-        0.14521641, 0.12911044, 0.17289190, 0.14580320, 0.12294280, 0.10370662, 0.08755065)
-
-    expect_equal(fitted$alo, expected_alo)
 })
 
 test_that("alocv correct for enet with intercept", {

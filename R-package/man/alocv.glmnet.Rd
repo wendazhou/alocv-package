@@ -5,8 +5,16 @@
 \title{Computes approximate leave-one-out errors for each regularization
 value in the fitted object.}
 \usage{
-\method{alocv}{glmnet}(fit, x, y, alpha = NULL, standardize = NULL,
-  intercept = NULL, ..., lasso_approximate_intercept = TRUE)
+\method{alocv}{glmnet}(
+  fit,
+  x,
+  y,
+  alpha = NULL,
+  standardize = NULL,
+  intercept = NULL,
+  ...,
+  lasso_approximate_intercept = TRUE
+)
 }
 \arguments{
 \item{fit}{the fitted glmnet object}

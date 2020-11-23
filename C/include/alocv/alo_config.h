@@ -8,6 +8,4 @@ typedef ptrdiff_t blas_size;
 typedef int blas_size;
 #endif
 
-
-
 #endif

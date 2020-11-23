@@ -3,7 +3,6 @@
 \docType{package}
 \name{alocv}
 \alias{alocv}
-\alias{alocv-package}
 \title{alocv: A package for computing unbiased risk estimates for high-dimensional models.}
 \usage{
 alocv(fit, x, y, ...)
@@ -16,12 +15,6 @@ alocv(fit, x, y, ...)
 \item{y}{The response vector.}
 
 \item{...}{Arguments to be passed to methods.}
-}
-\description{
-alocv: A package for computing unbiased risk estimates for high-dimensional models.
-
-Computes the approximate cross-validation value for a fitted
-classifier or regressor.
 }
 \seealso{
 \code{\link{alocv.glmnet}}
