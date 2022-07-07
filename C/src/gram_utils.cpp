@@ -11,7 +11,6 @@ void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, dou
     }
 
     const char* tt = trans == MatrixTranspose::Identity ? "T" : "N";
-    const char* tn = trans == MatrixTranspose::Identity ? "N" : "T";
 
     if(format == SymmetricFormat::Full) {
         dsyrk("L", tt, &p, &n, &one, XE, &lde, &zero, L, &p);
@@ -25,6 +24,7 @@ void compute_gram(blas_size n, blas_size p, const double* XE, blas_size lde, dou
     const blas_size p2 = p / 2;
     const blas_size p1 = p - p2;
     const blas_size ldl = is_odd ? p : p + 1;
+    const char* tn = trans == MatrixTranspose::Identity ? "N" : "T";
 
     dsyrk("L", tt, &p1, &n, &one, XE, &lde, &zero, L + (is_odd ? 0 : 1), &ldl);
     dsyrk("U", tt, &p2, &n, &one, XE + p1 * lde, &lde, &zero, L + (is_odd ? p : 0), &ldl);
