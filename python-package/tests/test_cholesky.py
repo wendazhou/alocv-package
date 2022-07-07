@@ -204,7 +204,7 @@ def test_choldelete_upper():
     X = random.randn(2 * p, p)
     S = np.dot(X.T, X)
 
-    E = np.ones(p, dtype=np.bool)
+    E = np.ones(p, dtype=np.bool_)
     E[p // 2] = False
 
     S_small = S[:, E][E, :]
@@ -222,7 +222,7 @@ def test_choldelete_cython():
     X = random.randn(2 * p, p)
     S = np.dot(X.T, X)
 
-    E = np.ones(p, dtype=np.bool)
+    E = np.ones(p, dtype=np.bool_)
     E[p // 2] = False
 
     S_small = S[:, E][E, :]
@@ -240,7 +240,7 @@ def test_choldelete_cython_inplace():
     X = random.randn(2 * p, p)
     S = np.dot(X.T, X)
 
-    E = np.ones(p, dtype=np.bool)
+    E = np.ones(p, dtype=np.bool_)
     E[p // 2] = False
 
     L = scipy.linalg.cholesky(S, lower=True)

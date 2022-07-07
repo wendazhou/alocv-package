@@ -1,3 +1,5 @@
+#cython: language_level=3
+
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -125,13 +127,14 @@ def cholappend(L, b, c, out=None):
 ###########################################
 
 
+
 cdef extern from "alocv/alo_lasso.h":
     cdef void lasso_compute_leverage_cholesky_d(int n, int k, double* W, int ldw, double* L, int ldl, double* leverage) nogil
     cdef void lasso_update_cholesky_w_d(int n, double* A, int lda, double* L, int ldl,
                                         double* W, int ldw, int len_index, int* index,
                                         int len_index_new, int* index_new) nogil
     cdef void lasso_compute_alo_d(int n, int p, int num_tuning, double* A, int lda, double* B, int ldb,
-                                  double* y, int incy, double tolerance, double* alo, double* leverage) nogil
+                                  double* y, int incy, const double* intercept, double tolerance, double* alo, double* leverage) nogil
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -216,7 +219,7 @@ cdef void _lasso_compute_alo_d(double[::view.contiguous, :] A,
     cdef int incy = y.strides[0] // sizeof(double)
 
     lasso_compute_alo_d(n, p, num_tuning, &A[0, 0], lda, &B[0, 0], ldb,
-                        &y[0], incy, tolerance, &alo[0],
+                        &y[0], incy, NULL, tolerance, &alo[0],
                         &leverage[0, 0] if leverage.shape[0] > 0 else NULL)
 
 

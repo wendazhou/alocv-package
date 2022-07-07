@@ -19,7 +19,7 @@ def make_test_case(n, p, k, seed=42):
 def test_compute_h():
     X, y = make_test_case(50, 20, 10)
 
-    E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool)
+    E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool_)
 
     h_computed = lasso.compute_h_lasso(X, E)
     h_naive = lasso.compute_h_lasso_naive(X, E)
@@ -47,7 +47,7 @@ def test_compute_alo_path():
 def test_compute_leverage_cholesky(method):
     X, y = make_test_case(100, 20, 10)
 
-    E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool)
+    E = np.concatenate((np.zeros(10), np.ones(10))).astype(np.bool_)
     S = np.dot(X[:, E].T, X[:, E])
 
     h_computed = lasso.compute_h_lasso(X, E)
@@ -165,7 +165,7 @@ def test_update_cholesky_inplace():
         - lasso._compute_leverage_cholesky(X, L_new_truth, E_new)) < 1e-5
 
 
-@pytest.mark.parametrize("method", [lasso.compute_alo_lasso, native_impl.lasso_compute_alo])
+@pytest.mark.parametrize("method", [lasso.compute_alo_lasso_py, lasso.compute_alo_lasso])
 def test_compute_alo_path_fast(method):
     X, y = make_test_case(50, 20, 10)
 

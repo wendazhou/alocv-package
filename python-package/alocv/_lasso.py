@@ -7,6 +7,8 @@ from scipy.linalg import cholesky, solve_triangular, solve
 
 from ._helper_c import cholappend, choldelete
 
+from ._helper_c import lasso_compute_alo as compute_alo_lasso
+
 
 def compute_alo_lasso_reference(X, y, beta_hats):
     """ Compute ALO approximation of error for lasso.
@@ -62,7 +64,27 @@ def _compute_leverage_cholesky(X, L, index):
     return np.sum(solve_triangular(L, W.T, lower=True, check_finite=False) ** 2, axis=0)
 
 
-def compute_alo_lasso(X, y, beta_hats):
+def compute_alo_lasso_py(X: np.ndarray, y: np.ndarray, beta_hats: np.ndarray) -> np.ndarray:
+    """Computes the ALO approximation of the error for the lasso estimator.
+
+    See also `compute_alo_lasso` for a faster implementation in pure C++,
+    and `compute_alo_lasso_reference` for a reference implementation in plain python.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Array of size ``n x p``, design matrix for the problem.
+    y : np.ndarray
+        Array of size ``n``, observations for the problem.
+    beta_hats : np.ndarray
+        Array of size ``p x num_alphas``, the fitted coefficients for each
+        regularization parameter.
+
+    Returns
+    -------
+    An array of size ``num_alphas``, containing the ALO approximation for
+    the least square error for each regularization parameter.
+    """
     residuals = y[:, np.newaxis] - np.dot(X, beta_hats)
     alo_values = np.empty(beta_hats.shape[1])
 

@@ -13,7 +13,7 @@ extern "C" {
  * the ALO estimates along a regularization path. Note that due to this specific geometry,
  * it does not take into account the uncertainty due to the estimation of the intercept.
  *
- * 
+ *
  * @param[in] n The number of observations (or rows of A).
  * @param[in] p The number of parameters (or columns of A).
  * @param[in] num_tuning The number of tuning considered (columns of B).
@@ -28,12 +28,16 @@ extern "C" {
  * @param[out] alo The alo values.
  * @param[out,optional] leverage If not NULL, a matrix which stores the leverage values for each observation
                         and tuning.
- */ 
-void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, const double* A, blas_size lda,
-                         const double* B, blas_size ldb, const double* y, blas_size incy,
-                         const double* intercept, double tolerance,
-                         double* alo, double* leverage);
+ */
+void lasso_compute_alo_d(blas_size n, blas_size p, blas_size num_tuning, const double *A, blas_size lda,
+                         const double *B, blas_size ldb, const double *y, blas_size incy, const double *intercept,
+                         double tolerance, double *alo, double *leverage);
 
+void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double *W, blas_size ldw, const double *L,
+                                       blas_size ldl, double *leverage);
+
+void lasso_update_cholesky_w_d(blas_size n, const double *A, blas_size lda, double *L, blas_size ldl, double *W, blas_size ldw, blas_size len_index,
+                               blas_size *index, blas_size len_index_new, blas_size *index_new);
 
 #ifdef __cplusplus
 }

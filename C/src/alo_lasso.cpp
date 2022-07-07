@@ -45,7 +45,6 @@ void copy_active_set(blas_size n, const double* A, blas_size lda, bool has_inter
     }
 }
 
-namespace {
 /*! Utility function to update the Cholesky decomposition along the lasso path.
  *
  * An essential component in computing the leverage values for the LASSO estimator is to compute the
@@ -147,7 +146,6 @@ void lasso_compute_leverage_cholesky_d(blas_size n, blas_size k, double* W, blas
     for(blas_size i = 0; i < n; ++i) {
         leverage[i] = ddot(&k, W + i, &n, W + i, &n);
     }
-}
 }
 
 /*! For a given coefficient set beta, finds the active set by a magnitude-based rule.

@@ -6,7 +6,9 @@ extensions = [
     Extension("alocv._helper_c",
               ['alocv/_helper_c.pyx',
                '../C/src/cholesky_utils.c',
-               '../C/src/alo_lasso.cpp'],
+               '../C/src/alo_enet.cpp',
+               '../C/src/alo_lasso.cpp',
+               '../C/src/gram_utils.cpp'],
               include_dirs=
               [np.get_include(),
                '../C/include',
