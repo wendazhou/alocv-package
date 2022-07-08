@@ -13,9 +13,9 @@ extensions = [
               [np.get_include(),
                '../C/include',
                '../C/src'] +
-              np.__config__.blas_opt_info['include_dirs'],
-              library_dirs=np.__config__.blas_opt_info['library_dirs'],
-              libraries=np.__config__.blas_opt_info['libraries'],
+              np.__config__.get_info('blas_opt').get('include_dirs', []),
+              library_dirs=np.__config__.get_info('blas_opt').get('library_dirs', []),
+              libraries=np.__config__.get_info('blas_opt').get('libraries', []),
               define_macros=[('USE_BLAS_SHIMS', 1)])
 ]
 
