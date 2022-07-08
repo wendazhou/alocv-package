@@ -5,6 +5,10 @@ cimport numpy as np
 cimport cython
 from cython cimport view
 
+# Include custom blas bindings to scipy-exposed blas
+# These will be used if USE_MKL is not defined
+include "_blas.pyx"
+
 ########################################
 # Cholesky utilities
 ########################################
@@ -24,7 +28,6 @@ cdef void _cholupdate_d(double[::view.contiguous, :] L, double[:] x) nogil:
     cdef int incx = x.strides[0] // sizeof(double)
 
     cholesky_update_d(len(x), &L[0, 0], ldl, &x[0], incx)
-    
 
 
 @cython.embedsignature(True)

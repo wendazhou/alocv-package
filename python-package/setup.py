@@ -5,7 +5,6 @@ from Cython.Build import cythonize
 extensions = [
     Extension("alocv._helper_c",
               ['alocv/_helper_c.pyx',
-               'alocv/_blas.pyx',
                '../C/src/cholesky_utils.c',
                '../C/src/alo_enet.cpp',
                '../C/src/alo_lasso.cpp',
