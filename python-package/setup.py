@@ -5,6 +5,7 @@ from Cython.Build import cythonize
 extensions = [
     Extension("alocv._helper_c",
               ['alocv/_helper_c.pyx',
+               'alocv/_blas.pyx',
                '../C/src/cholesky_utils.c',
                '../C/src/alo_enet.cpp',
                '../C/src/alo_lasso.cpp',
@@ -16,7 +17,7 @@ extensions = [
               np.__config__.blas_opt_info['include_dirs'],
               library_dirs=np.__config__.blas_opt_info['library_dirs'],
               libraries=np.__config__.blas_opt_info['libraries'],
-              define_macros=[('USE_MKL', 1)])
+              define_macros=[('USE_BLAS_SHIMS', 1)])
 ]
 
 setup(

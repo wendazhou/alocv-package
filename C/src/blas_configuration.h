@@ -40,6 +40,10 @@
 
 #define ALOCV_LAPACK_NO_RFP
 
+#elif USE_BLAS_SHIMS
+
+#include "blas_shims.h"
+
 #else
 #include <blas.h>
 #include <lapack.h>

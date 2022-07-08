@@ -24,6 +24,7 @@ cdef void _cholupdate_d(double[::view.contiguous, :] L, double[:] x) nogil:
     cdef int incx = x.strides[0] // sizeof(double)
 
     cholesky_update_d(len(x), &L[0, 0], ldl, &x[0], incx)
+    
 
 
 @cython.embedsignature(True)
